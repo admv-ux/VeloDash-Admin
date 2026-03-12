@@ -1,0 +1,28 @@
+name: Deploy Velo Admin
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 38.242.149.20
+          username: devkojo
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ~/apps/velo-admin/velo-admin
+            git pull origin main
+            docker build -t velo-frontend:latest .
+            docker rm -f velo-frontend || true
+            docker run -d -p 8080:80 --name velo-frontend --restart=always velo-frontend:latest
+
