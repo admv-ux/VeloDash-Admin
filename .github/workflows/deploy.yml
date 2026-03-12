@@ -10,19 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      # Checkout the repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
+      # Setup Node.js (use Node 24 to avoid deprecation warning)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '24'
+
+      # Install dependencies and build (optional: if you want GitHub to build first)
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build
+
+      # Deploy via SSH
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
         with:
           host: 38.242.149.20
           username: devkojo
           key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
           script: |
             cd ~/apps/velo-admin/velo-admin
             git pull origin main
             docker build -t velo-frontend:latest .
             docker rm -f velo-frontend || true
             docker run -d -p 8080:80 --name velo-frontend --restart=always velo-frontend:latest
-
