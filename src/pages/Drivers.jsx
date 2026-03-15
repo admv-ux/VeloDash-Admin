@@ -22,6 +22,7 @@ import DriverForm from '@/components/drivers/DriverForm';
 import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban, Trash2, Plus, Star, Car, Bike, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/AuthContext';
 
 const vehicleIcons = {
   motorcycle: Bike,
@@ -31,6 +32,7 @@ const vehicleIcons = {
 };
 
 export default function Drivers() {
+  const { currentLocation } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedDriver, setSelectedDriver] = useState(null);
@@ -40,7 +42,7 @@ export default function Drivers() {
   const queryClient = useQueryClient();
 
   const { data: drivers = [], isLoading } = useQuery({
-    queryKey: ['drivers'],
+    queryKey: ['drivers', currentLocation],
     queryFn: () => base44.entities.Driver.list('-created_date', 200),
   });
 

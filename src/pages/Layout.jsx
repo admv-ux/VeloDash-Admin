@@ -36,6 +36,8 @@ import {
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { Globe } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -45,23 +47,69 @@ const navigation = [
   { name: 'Riders/Buyers', href: 'Riders', icon: Users },
   { name: 'Orders & Rides', href: 'Orders', icon: Package },
   { name: 'Platform Earnings', href: 'Earnings', icon: CreditCard },
-  { name: 'Movies', href: 'Movies', icon: FileText },
-  { name: 'Support Tickets', href: 'SupportTickets', icon: TicketCheck },
   { name: 'Zones & Pricing', href: 'Zones', icon: Map },
   { name: 'Notifications', href: 'Notifications', icon: Bell },
-  { name: 'Analytics', href: 'Analytics', icon: BarChart3 },
   { name: 'Audit Logs', href: 'AuditLogs', icon: Shield },
   { name: 'Settings', href: 'Settings', icon: Settings },
-  { name: 'Waitlist', href: 'Waitlist', icon: Users },
+  { name: 'Waitlist', href: 'Waitlist', icon: Globe },
+  { name: 'Team', href: 'Team', icon: Users },
 ];
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, currentLocation, setLocationScope } = useAuth();
+
+  const { data: countries = [] } = useQuery({
+    queryKey: ['countries'],
+    queryFn: () => base44.entities.Waitlist.getCountries(),
+  });
 
   const handleLogout = () => {
     console.log("logout");
     logout();
+  };
+
+  const isSuperAdmin = user?.roles?.some(r => r.name === 'super_admin' || r.name === 'admin');
+  const userRoles = user?.roles?.map(r => r.name) || [];
+
+  // Filter navigation based on role
+  const filteredNavigation = navigation.filter(item => {
+    if (isSuperAdmin) return true;
+    
+    if (item.name === 'Settings' || item.name === 'Audit Logs' || item.name === 'Team') return false;
+    if (item.name === 'Platform Earnings' && !userRoles.includes('finance_viewer') && !userRoles.includes('country_manager')) return false;
+    
+    return true;
+  });
+
+  const LocationSwitcher = () => {
+    if (!isSuperAdmin) return null;
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="gap-2 bg-white/50 border-slate-200">
+            <Globe className="w-4 h-4 text-violet-600" />
+            <span className="hidden sm:inline">{currentLocation.country}</span>
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => setLocationScope({ country: 'All', city: 'All' })}>
+            All Markets
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {countries.map((country) => (
+            <DropdownMenuItem 
+              key={country.id} 
+              onClick={() => setLocationScope({ country: country.name, city: 'All' })}
+            >
+              {country.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   return (
@@ -100,7 +148,7 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const isActive = currentPageName === item.href;
               return (
                 <Link
@@ -124,16 +172,31 @@ export default function Layout({ children, currentPageName }) {
           {/* User section */}
           {user && (
             <div className="p-4 border-t border-slate-800">
-              <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/50">
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-violet-600 text-white text-sm">
-                    {user.full_name?.charAt(0) || user.email?.charAt(0) || 'A'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user.full_name || 'Admin'}</p>
-                  <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              <div className="flex flex-col gap-2 p-3 rounded-xl bg-slate-800/50">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-violet-600 text-white text-sm">
+                      {user.full_name?.charAt(0) || user.email?.charAt(0) || 'A'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user.full_name || 'Admin'}</p>
+                    <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                  </div>
                 </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {user.roles.map(role => (
+                    <span key={role.name || role} className="px-2 py-0.5 rounded-full bg-violet-500/20 text-[10px] font-medium text-violet-400 border border-violet-500/30">
+                      {role.name || role}
+                    </span>
+                  ))}
+                </div>
+                {(!isSuperAdmin && currentLocation.country !== 'All') && (
+                  <p className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                    <Globe className="w-3 h-3" />
+                    {currentLocation.country} {currentLocation.city !== 'All' ? `> ${currentLocation.city}` : ''}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -160,6 +223,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             <div className="flex items-center gap-3">
+              <LocationSwitcher />
               <NotificationBell userEmail={user?.email} userType="admin" />
 
               {user && (

@@ -25,8 +25,10 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import { DollarSign, TrendingUp, Wallet, ArrowDownToLine, Calendar } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/AuthContext';
 
 export default function Earnings() {
+  const { currentLocation } = useAuth();
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [withdrawalData, setWithdrawalData] = useState({
     amount: '',
@@ -40,12 +42,12 @@ export default function Earnings() {
   const queryClient = useQueryClient();
 
   const { data: orders = [] } = useQuery({
-    queryKey: ['orders'],
+    queryKey: ['orders', currentLocation],
     queryFn: () => base44.entities.Order.list('-created_date', 1000),
   });
 
   const { data: withdrawals = [], isLoading } = useQuery({
-    queryKey: ['withdrawals'],
+    queryKey: ['withdrawals', currentLocation],
     queryFn: () => base44.entities.PlatformWithdrawal.list('-created_date', 100),
   });
 

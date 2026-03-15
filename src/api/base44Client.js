@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'http://localhost:3008/api/v1';
-const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
-const API_KEY = 'your-api-key-here';
-
+const API_BASE_URL = 'http://localhost:3008/api/v1';
+// const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
+//const API_KEY = 'your-api-key-here';
+const API_KEY = '12345';
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -12,12 +12,23 @@ const client = axios.create({
   },
 });
 
-// Interceptor to add the user's phone number to every request
+// Interceptor to add the user's phone number and location scope to every request
 client.interceptors.request.use((config) => {
   const phone = localStorage.getItem('admin_phone');
   if (phone) {
     config.headers['x-user-phone'] = phone;
   }
+
+  const countryScope = localStorage.getItem('v_country_scope');
+  const cityScope = localStorage.getItem('v_city_scope');
+
+  if (countryScope && countryScope !== 'All') {
+    config.headers['x-country-scope'] = countryScope;
+  }
+  if (cityScope && cityScope !== 'All') {
+    config.headers['x-city-scope'] = cityScope;
+  }
+
   return config;
 });
 
@@ -74,6 +85,57 @@ export const base44 = {
     Order: {
       async list() {
         const response = await client.get('/admin/rides');
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/rides/${id}`, data);
+        return response.data;
+      },
+    },
+    Zone: {
+      async list() {
+        const response = await client.get('/admin/zones');
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/zones', data);
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/zones/${id}`, data);
+        return response.data;
+      },
+      async delete(id) {
+        const response = await client.delete(`/admin/zones/${id}`);
+        return response.status === 204;
+      },
+    },
+    PlatformSettings: {
+      async list() {
+        const response = await client.get('/admin/settings');
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/settings', data);
+        return response.data;
+      },
+      async update(id, data) {
+        // reuse create as it handles both in backend updateSetting
+        const response = await client.post('/admin/settings', data);
+        return response.data;
+      },
+    },
+    PlatformWithdrawal: {
+      async list() {
+        const response = await client.get('/admin/withdrawals');
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/withdrawals', data);
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/withdrawals/${id}`, data);
         return response.data;
       },
     },

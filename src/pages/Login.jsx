@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { ShieldCheck, Phone, Key, ArrowRight, Loader2 } from 'lucide-react';
+import 'react-phone-number-input/style.css';
+import PhoneInput from 'react-phone-number-input';
 
 export default function Login() {
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState();
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState(1); // 1: Phone, 2: OTP
     const [loading, setLoading] = useState(false);
@@ -89,14 +91,12 @@ export default function Login() {
                         <form onSubmit={handleRequestOtp} className="space-y-4">
                             <div className="space-y-2">
                                 <div className="relative">
-                                    <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                                    <Input
-                                        type="tel"
-                                        placeholder="+233XXXXXXXXX"
+                                    <PhoneInput
+                                        defaultCountry="GH"
+                                        placeholder="Enter phone number"
                                         value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
-                                        className="pl-10 h-11 border-slate-200 dark:border-slate-800 transition-all focus:ring-2 focus:ring-violet-500/20"
-                                        required
+                                        onChange={setPhoneNumber}
+                                        className="flex h-11 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     />
                                 </div>
                             </div>
@@ -114,6 +114,48 @@ export default function Login() {
                                     </>
                                 )}
                             </Button>
+                            
+                            <div className="relative my-4">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t border-slate-200 dark:border-slate-800" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-white dark:bg-slate-900 px-2 text-slate-500">Development Only</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        login("+233000000000");
+                                        navigate("/");
+                                        toast({
+                                            title: "Guest Access",
+                                            description: "Logged in as Guest Admin 1.",
+                                        });
+                                    }}
+                                    className="h-11 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs"
+                                >
+                                    Guest 1
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        login("+233000000001");
+                                        navigate("/");
+                                        toast({
+                                            title: "Guest Access",
+                                            description: "Logged in as Guest Admin 2.",
+                                        });
+                                    }}
+                                    className="h-11 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs"
+                                >
+                                    Guest 2
+                                </Button>
+                            </div>
                         </form>
                     ) : (
                         <form onSubmit={handleVerifyOtp} className="space-y-4">

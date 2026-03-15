@@ -16,8 +16,10 @@ import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Plus, Edit2, Trash2, MapPin, DollarSign, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/AuthContext';
 
 export default function Zones() {
+  const { currentLocation } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selectedZone, setSelectedZone] = useState(null);
@@ -38,7 +40,7 @@ export default function Zones() {
   const queryClient = useQueryClient();
 
   const { data: zones = [], isLoading } = useQuery({
-    queryKey: ['zones'],
+    queryKey: ['zones', currentLocation],
     queryFn: () => base44.entities.Zone.list('-created_date', 100),
   });
 

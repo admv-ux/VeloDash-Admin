@@ -15,6 +15,7 @@ import SupportTickets from "./SupportTickets";
 import Zones from "./Zones";
 import Movies from "./Movies";
 import Waitlist from "./Waitlist";
+import Team from "./Team";
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
 import Login from "./Login";
@@ -28,7 +29,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Notifications', 'Orders', 'Riders', 'Settings', 'SupportTickets', 'Zones', 'Movies', 'Waitlist'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Notifications', 'Orders', 'Riders', 'Settings', 'SupportTickets', 'Zones', 'Movies', 'Waitlist', 'Team'];
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }
@@ -92,6 +93,7 @@ export default function Pages() {
                     <Route path="/Zones" element={<Zones />} />
                     <Route path="/Movies" element={<Movies />} />
                     <Route path="/Waitlist" element={<Waitlist />} />
+                    <Route path="/Team" element={<Team />} />
                 </Route>
 
                 {/* Catch-all redirect */}

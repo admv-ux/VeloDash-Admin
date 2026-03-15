@@ -12,32 +12,34 @@ import RevenueChart from '@/components/dashboard/RevenueChart';
 import UserDistribution from '@/components/dashboard/UserDistribution';
 import { Store, Car, Users, Package, DollarSign, TrendingUp, Calendar } from 'lucide-react';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { useAuth } from '@/AuthContext';
 
 export default function Dashboard() {
+  const { user, currentLocation } = useAuth();
   const [showCommissionDialog, setShowCommissionDialog] = useState(false);
   const [showRevenueDialog, setShowRevenueDialog] = useState(false);
   const { data: merchants = [], isLoading: loadingMerchants } = useQuery({
-    queryKey: ['merchants'],
+    queryKey: ['merchants', currentLocation],
     queryFn: () => base44.entities.Merchant.list('-created_date', 100),
   });
 
   const { data: drivers = [], isLoading: loadingDrivers } = useQuery({
-    queryKey: ['drivers'],
+    queryKey: ['drivers', currentLocation],
     queryFn: () => base44.entities.Driver.list('-created_date', 100),
   });
 
   const { data: riders = [], isLoading: loadingRiders } = useQuery({
-    queryKey: ['riders'],
+    queryKey: ['riders', currentLocation],
     queryFn: () => base44.entities.Rider.list('-created_date', 100),
   });
 
   const { data: orders = [], isLoading: loadingOrders } = useQuery({
-    queryKey: ['orders'],
+    queryKey: ['orders', currentLocation],
     queryFn: () => base44.entities.Order.list('-created_date', 100),
   });
 
   const { data: tickets = [] } = useQuery({
-    queryKey: ['tickets'],
+    queryKey: ['tickets', currentLocation],
     queryFn: () => base44.entities.SupportTicket.list('-created_date', 50),
   });
 

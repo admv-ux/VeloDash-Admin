@@ -21,8 +21,10 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import { MoreHorizontal, Eye, CheckCircle, Ban, Trash2, Package, Car, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/AuthContext';
 
 export default function Riders() {
+  const { currentLocation } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRider, setSelectedRider] = useState(null);
@@ -31,7 +33,7 @@ export default function Riders() {
   const queryClient = useQueryClient();
 
   const { data: riders = [], isLoading } = useQuery({
-    queryKey: ['riders'],
+    queryKey: ['riders', currentLocation],
     queryFn: () => base44.entities.Rider.list('-created_date', 200),
   });
 

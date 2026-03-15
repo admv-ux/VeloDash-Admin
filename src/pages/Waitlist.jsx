@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function Waitlist() {
+  const { currentLocation } = useAuth();
     const [entries, setEntries] = useState([]);
     const [countries, setCountries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function Waitlist() {
     useEffect(() => {
         fetchEntries();
         fetchCountries();
-    }, []);
+    }, [currentLocation]);
 
     const handleDelete = async (id) => {
         if (!confirm("Are you sure you want to remove this entry?")) return;

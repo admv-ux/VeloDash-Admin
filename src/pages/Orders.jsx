@@ -25,8 +25,10 @@ import { NotificationService } from '@/components/notifications/NotificationServ
 import { MoreHorizontal, Eye, XCircle, MapPin, Package, Car, Clock, DollarSign, Search, Phone, Navigation, Ban, LogOut, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/AuthContext';
 
 export default function Orders() {
+  const { currentLocation } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -39,27 +41,27 @@ export default function Orders() {
   const queryClient = useQueryClient();
 
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['orders'],
+    queryKey: ['orders', currentLocation],
     queryFn: () => base44.entities.Order.list('-created_date', 500),
   });
 
   const { data: drivers = [] } = useQuery({
-    queryKey: ['drivers'],
+    queryKey: ['drivers', currentLocation],
     queryFn: () => base44.entities.Driver.list('-created_date', 500),
   });
 
   const { data: merchants = [] } = useQuery({
-    queryKey: ['merchants'],
+    queryKey: ['merchants', currentLocation],
     queryFn: () => base44.entities.Merchant.list('-created_date', 500),
   });
 
   const { data: riders = [] } = useQuery({
-    queryKey: ['riders'],
+    queryKey: ['riders', currentLocation],
     queryFn: () => base44.entities.Rider.list('-created_date', 500),
   });
 
   const { data: zones = [] } = useQuery({
-    queryKey: ['zones'],
+    queryKey: ['zones', currentLocation],
     queryFn: () => base44.entities.Zone.list(),
   });
 

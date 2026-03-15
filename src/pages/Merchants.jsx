@@ -22,8 +22,10 @@ import MerchantForm from '@/components/merchants/MerchantForm';
 import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban, Trash2, Plus, Star, MapPin, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/AuthContext';
 
 export default function Merchants() {
+  const { currentLocation } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedMerchant, setSelectedMerchant] = useState(null);
@@ -33,7 +35,7 @@ export default function Merchants() {
   const queryClient = useQueryClient();
 
   const { data: merchants = [], isLoading } = useQuery({
-    queryKey: ['merchants'],
+    queryKey: ['merchants', currentLocation],
     queryFn: () => base44.entities.Merchant.list('-created_date', 200),
   });
 
