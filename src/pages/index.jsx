@@ -19,6 +19,7 @@ import Team from "./Team";
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
 import Login from "./Login";
+import SetupAdmin from "./SetupAdmin";
 
 function _getCurrentPage(url) {
     if (url.endsWith('/')) {
@@ -74,6 +75,7 @@ export default function Pages() {
         <Router>
             <Routes>
                 <Route path="/login" element={<LoginWrapper />} />
+                <Route path="/setup-admin" element={<SetupAdmin />} />
 
                 {/* Protected Routes */}
                 <Route element={<ProtectedLayout />}>
