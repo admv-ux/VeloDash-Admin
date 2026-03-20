@@ -177,13 +177,13 @@ export const base44 = {
         return response.data;
       },
     },
-    Setup: {
-      async createAdmin(data) {
-        const response = await client.post('/setup/create-admin', data);
-        return response.data;
-      },
-    },
     // Add other entities as needed...
+  },
+  Setup: {
+    async createAdmin(data) {
+      const response = await client.post('/setup/create-admin', data);
+      return response.data;
+    },
   },
 };
 
