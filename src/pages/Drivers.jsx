@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { base44, getErrorMessage } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -52,6 +52,7 @@ export default function Drivers() {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       toast.success('Driver updated successfully');
     },
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const deleteMutation = useMutation({
@@ -60,6 +61,7 @@ export default function Drivers() {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       toast.success('Driver deleted');
     },
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const handleStatusChange = (driver, newStatus) => {

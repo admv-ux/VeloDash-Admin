@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3008/api/v1';
-// const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
-//const API_KEY = 'your-api-key-here';
-const API_KEY = '12345';
+//const API_BASE_URL = 'http://localhost:3008/api/v1';
+const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
+const API_KEY = 'your-api-key-here';
+//const API_KEY = '12345';
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,6 +11,20 @@ const client = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+
+
+// Helper to extract error messages from axios response
+export const getErrorMessage = (error) => {
+  const data = error.response?.data;
+  if (data) {
+    if (typeof data === 'string') return data;
+    if (data.message) return data.message;
+    if (data.error) return data.error;
+    if (typeof data === 'object') return JSON.stringify(data);
+  }
+  return error.message || "An unexpected error occurred";
+};
 
 // Interceptor to add the user's phone number and location scope to every request
 client.interceptors.request.use((config) => {
@@ -148,14 +162,26 @@ export const base44 = {
         const response = await client.delete(`/waitlist/entries/${id}`);
         return response.status === 204;
       },
-      async getCountries() {
-        const response = await client.get('/waitlist/countries');
-        return response.data;
-      },
       async addCountry(data) {
         const response = await client.post('/waitlist/countries', data);
         return response.data;
       }
+    },
+    Staff: {
+      async list() {
+        const response = await client.get('/admin/staff');
+        return response.data;
+      },
+      async update(data) {
+        const response = await client.post('/admin/staff/update', data);
+        return response.data;
+      },
+    },
+    Setup: {
+      async createAdmin(data) {
+        const response = await client.post('/setup/create-admin', data);
+        return response.data;
+      },
     },
     // Add other entities as needed...
   },

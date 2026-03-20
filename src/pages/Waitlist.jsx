@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { base44, getErrorMessage } from '@/api/base44Client';
 import { useAuth } from '@/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,7 +46,7 @@ export default function Waitlist() {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to load waitlist entries.",
+                description: getErrorMessage(error),
             });
         } finally {
             setLoading(false);
@@ -83,7 +83,7 @@ export default function Waitlist() {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to delete entry.",
+                description: getErrorMessage(error),
             });
         }
     };
@@ -105,7 +105,7 @@ export default function Waitlist() {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to add country.",
+                description: getErrorMessage(error),
             });
         }
     };

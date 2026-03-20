@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { base44, getErrorMessage } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,7 @@ export default function Zones() {
       setShowForm(false);
       resetForm();
     },
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const updateMutation = useMutation({
@@ -62,6 +63,7 @@ export default function Zones() {
       setShowForm(false);
       resetForm();
     },
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const deleteMutation = useMutation({
@@ -70,6 +72,7 @@ export default function Zones() {
       queryClient.invalidateQueries({ queryKey: ['zones'] });
       toast.success('Zone deleted');
     },
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const resetForm = () => {

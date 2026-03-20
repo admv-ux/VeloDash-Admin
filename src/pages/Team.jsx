@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { base44, getErrorMessage } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -37,6 +37,7 @@ export default function Team() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     email: '',
+    phoneNumber: '',
     role: 'support_agent',
     allowedCountries: '',
     allowedCities: '',
@@ -47,8 +48,7 @@ export default function Team() {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      const response = await base44.entities.Rider.list(); // Using user list endpoint
-      return response.filter(u => u.roles && u.roles.length > 0);
+      return base44.entities.Staff.list();
     },
   });
 
@@ -59,9 +59,7 @@ export default function Team() {
 
   const inviteMutation = useMutation({
     mutationFn: (data) => {
-      // Logic to invite or update admin user
-      // This would typically be a specific endpoint for staff management
-      return base44.entities.Rider.update(data.id, data);
+      return base44.entities.Staff.update(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -69,12 +67,16 @@ export default function Team() {
       setShowAddDialog(false);
       resetForm();
     },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
   });
 
   const resetForm = () => {
     setSelectedUser(null);
     setFormData({
       email: '',
+      phoneNumber: '',
       role: 'support_agent',
       allowedCountries: '',
       allowedCities: '',
@@ -85,7 +87,8 @@ export default function Team() {
     setSelectedUser(user);
     const role = user.roles?.[0]?.name || 'support_agent';
     setFormData({
-      email: user.email,
+      email: user.email || '',
+      phoneNumber: user.phone || '',
       role: role,
       allowedCountries: user.roles?.[0]?.allowedCountries?.join(', ') || '',
       allowedCities: user.roles?.[0]?.allowedCities?.join(', ') || '',
@@ -238,10 +241,21 @@ export default function Team() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                disabled={!!selectedUser}
+                required={!formData.phoneNumber}
                 placeholder="email@example.com"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input
+                type="tel"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                required={!formData.email}
+                placeholder="+233..."
+              />
+              <p className="text-[10px] text-slate-500 italic">E.164 format recommended</p>
             </div>
 
             <div className="space-y-2">

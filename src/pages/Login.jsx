@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
-import { base44 } from '@/api/base44Client';
+import { base44, getErrorMessage } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +35,7 @@ export default function Login() {
             toast({
                 variant: "destructive",
                 title: "Login Failed",
-                description: error.response?.data?.message || "Failed to send OTP",
+                description: getErrorMessage(error),
             });
         } finally {
             setLoading(false);
@@ -58,8 +58,8 @@ export default function Login() {
         } catch (error) {
             toast({
                 variant: "destructive",
-                title: "Invalid Code",
-                description: "The OTP you entered is incorrect or expired.",
+                title: "Authentication Failed",
+                description: getErrorMessage(error),
             });
         } finally {
             setLoading(false);
