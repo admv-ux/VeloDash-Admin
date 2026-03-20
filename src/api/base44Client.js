@@ -177,6 +177,12 @@ export const base44 = {
         return response.data;
       },
     },
+    AuditLog: {
+      async list(sort = '-created_date', limit = 100) {
+        const response = await client.get('/admin/audit-logs', { params: { sort, limit } });
+        return response.data;
+      },
+    },
     // Add other entities as needed...
   },
   Setup: {
