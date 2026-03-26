@@ -5,17 +5,20 @@ import AuditLogs from "./AuditLogs";
 import Dashboard from "./Dashboard";
 import DriverAvailability from "./DriverAvailability";
 import Drivers from "./Drivers";
-import Earnings from "./Earnings";
 import Merchants from "./Merchants";
 import Notifications from "./Notifications";
 import Orders from "./Orders";
 import Riders from "./Riders";
 import Settings from "./Settings";
+import FeeStructure from "./FeeStructure";
+import RideSimulator from "./RideSimulator";
 import SupportTickets from "./SupportTickets";
 import Zones from "./Zones";
-import Movies from "./Movies";
 import Waitlist from "./Waitlist";
 import Team from "./Team";
+import Wallets from './Wallets';
+import Transactions from './Transactions';
+import Earnings from './Earnings';
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
 import Login from "./Login";
@@ -30,7 +33,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Notifications', 'Orders', 'Riders', 'Settings', 'SupportTickets', 'Zones', 'Movies', 'Waitlist', 'Team'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Notifications', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions'];
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }
@@ -79,21 +82,24 @@ export default function Pages() {
 
                 {/* Protected Routes */}
                 <Route element={<ProtectedLayout />}>
-                    <Route path="/" element={<Analytics />} />
+                    <Route path="/" element={<Dashboard />} />
                     <Route path="/Analytics" element={<Analytics />} />
                     <Route path="/AuditLogs" element={<AuditLogs />} />
                     <Route path="/Dashboard" element={<Dashboard />} />
                     <Route path="/DriverAvailability" element={<DriverAvailability />} />
                     <Route path="/Drivers" element={<Drivers />} />
-                    <Route path="/Earnings" element={<Earnings />} />
                     <Route path="/Merchants" element={<Merchants />} />
                     <Route path="/Notifications" element={<Notifications />} />
                     <Route path="/Orders" element={<Orders />} />
                     <Route path="/Riders" element={<Riders />} />
                     <Route path="/Settings" element={<Settings />} />
+                    <Route path="/finances/wallets" element={<Wallets />} />
+                    <Route path="/finances/transactions" element={<Transactions />} />
+                    <Route path="/earnings" element={<Earnings />} />
+                    <Route path="/fee-structure" element={<FeeStructure />} />
+                    <Route path="/RideSimulator" element={<RideSimulator />} />
                     <Route path="/SupportTickets" element={<SupportTickets />} />
                     <Route path="/Zones" element={<Zones />} />
-                    <Route path="/Movies" element={<Movies />} />
                     <Route path="/Waitlist" element={<Waitlist />} />
                     <Route path="/Team" element={<Team />} />
                 </Route>

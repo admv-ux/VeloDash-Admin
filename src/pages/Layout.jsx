@@ -32,7 +32,8 @@ import {
   LogOut,
   ChevronDown,
   Bike,
-  Clock
+  Clock,
+  Play
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/AuthContext';
@@ -46,8 +47,16 @@ const navigation = [
   { name: 'Driver Availability', href: 'DriverAvailability', icon: Clock },
   { name: 'Riders/Buyers', href: 'Riders', icon: Users },
   { name: 'Orders & Rides', href: 'Orders', icon: Package },
-  { name: 'Platform Earnings', href: 'Earnings', icon: CreditCard },
-  { name: 'Zones & Pricing', href: 'Zones', icon: Map },
+  {
+    title: 'Finances',
+    icon: DollarSign, // Used DollarSign directly
+    children: [
+      { name: 'Platform Revenue', path: '/earnings', roles: ['admin', 'finance_viewer', 'country_manager'] },
+      { name: 'User Wallets', path: '/finances/wallets', roles: ['admin', 'finance_viewer'] },
+      { name: 'Transaction Logs', path: '/finances/transactions', roles: ['admin', 'finance_viewer'] },
+      { name: 'Fee & Fare Structure', path: '/fee-structure', roles: ['admin', 'finance_viewer', 'country_manager'] },
+    ]
+  },
   { name: 'Notifications', href: 'Notifications', icon: Bell },
   { name: 'Audit Logs', href: 'AuditLogs', icon: Shield },
   { name: 'Settings', href: 'Settings', icon: Settings },
@@ -76,8 +85,8 @@ export default function Layout({ children, currentPageName }) {
   const filteredNavigation = navigation.filter(item => {
     if (isSuperAdmin) return true;
     
-    if (item.name === 'Settings' || item.name === 'Audit Logs' || item.name === 'Team') return false;
-    if (item.name === 'Platform Earnings' && !userRoles.includes('finance_viewer') && !userRoles.includes('country_manager')) return false;
+    if (item.name === 'Audit Logs' || item.name === 'Team') return false;
+    if ((item.name === 'Platform Earnings' || item.name === 'Fee & Fare Structure' || item.name === 'Ride Simulator') && !userRoles.includes('finance_viewer') && !userRoles.includes('country_manager') && !userRoles.includes('admin')) return false;
     
     return true;
   });

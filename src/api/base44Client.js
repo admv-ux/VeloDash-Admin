@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-//const API_BASE_URL = 'http://localhost:3008/api/v1';
-const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
+const API_BASE_URL = 'http://localhost:3008/api/v1';
+//const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
 const API_KEY = 'your-api-key-here';
-//const API_KEY = '12345';
+
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,6 +11,7 @@ const client = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
 
 
 
@@ -69,6 +70,10 @@ export const base44 = {
     Driver: {
       async list() {
         const response = await client.get('/admin/drivers');
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/drivers', data);
         return response.data;
       },
       async update(id, data) {
@@ -130,12 +135,12 @@ export const base44 = {
         return response.data;
       },
       async create(data) {
+        // usually settings are created per country
         const response = await client.post('/admin/settings', data);
         return response.data;
       },
-      async update(id, data) {
-        // reuse create as it handles both in backend updateSetting
-        const response = await client.post('/admin/settings', data);
+      async update(country, data) {
+        const response = await client.put(`/admin/settings/${country}`, data);
         return response.data;
       },
     },
@@ -165,6 +170,10 @@ export const base44 = {
       async addCountry(data) {
         const response = await client.post('/waitlist/countries', data);
         return response.data;
+      },
+      async getCountries() {
+        const response = await client.get('/waitlist/countries');
+        return response.data;
       }
     },
     Staff: {
@@ -180,6 +189,50 @@ export const base44 = {
     AuditLog: {
       async list(sort = '-created_date', limit = 100) {
         const response = await client.get('/admin/audit-logs', { params: { sort, limit } });
+        return response.data;
+      },
+    },
+    Simulate: {
+      async createRide(data) {
+        const response = await client.post('/admin/simulate/ride', data);
+        return response.data;
+      },
+      async advanceRide(rideId) {
+        const response = await client.patch(`/admin/simulate/ride/${rideId}/advance`);
+        return response.data;
+      },
+    },
+    Users: {
+      async list() {
+        const response = await client.get('/admin/users');
+        return response.data;
+      },
+    },
+    Drivers: {
+      async list() {
+        const response = await client.get('/admin/drivers');
+        return response.data;
+      },
+    },
+    Finance: {
+      async listWallets(params = {}) {
+        const response = await client.get('/admin/wallets', { params });
+        return response.data;
+      },
+      async getTransactions(userId, params = {}) {
+        const response = await client.get(`/admin/wallets/${userId}/transactions`, { params });
+        return response.data;
+      },
+      async listAllTransactions(params = {}) {
+        const response = await client.get('/admin/transactions', { params });
+        return response.data;
+      },
+      async creditWallet(userId, data) {
+        const response = await client.post(`/admin/credit-wallet/${userId}`, data);
+        return response.data;
+      },
+      async debitWallet(userId, data) {
+        const response = await client.post(`/admin/debit-wallet/${userId}`, data);
         return response.data;
       },
     },

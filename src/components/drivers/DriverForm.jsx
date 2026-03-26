@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { base44, getErrorMessage } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ export default function DriverForm({ driver, onClose }) {
     full_name: driver?.full_name || '',
     email: driver?.email || '',
     phone: driver?.phone || '',
-    vehicle_type: driver?.vehicle_type || 'motorcycle',
+    vehicle_type: driver?.vehicle_type || 'bike',
     vehicle_number: driver?.vehicle_number || '',
     license_number: driver?.license_number || '',
     service_type: driver?.service_type || 'both',
@@ -39,7 +39,7 @@ export default function DriverForm({ driver, onClose }) {
       onClose();
     },
     onError: (err) => {
-      toast.error('Failed to save driver');
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -93,10 +93,11 @@ export default function DriverForm({ driver, onClose }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="motorcycle">Motorcycle</SelectItem>
+              <SelectItem value="bike">Motorcycle / Bike</SelectItem>
               <SelectItem value="car">Car</SelectItem>
               <SelectItem value="van">Van</SelectItem>
-              <SelectItem value="bicycle">Bicycle</SelectItem>
+              <SelectItem value="truck">Truck</SelectItem>
+              <SelectItem value="suv">SUV</SelectItem>
             </SelectContent>
           </Select>
         </div>
