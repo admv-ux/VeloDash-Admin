@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3008/api/v1';
-//const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
+//const API_BASE_URL = 'http://localhost:3008/api/v1';
+const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
 const API_KEY = 'your-api-key-here';
 
 const client = axios.create({
@@ -99,6 +99,24 @@ export const base44 = {
       async update(id, data) {
         const response = await client.patch(`/admin/merchants/${id}`, data);
         return response.data;
+      },
+      async updateProfile(id, data) {
+        const response = await client.patch(`/admin/merchants/${id}/profile`, data);
+        return response.data;
+      },
+    },
+    Product: {
+      async list(params = {}) {
+        const response = await client.get('/admin/products', { params });
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/products/${id}`, data);
+        return response.data;
+      },
+      async delete(id) {
+        const response = await client.delete(`/admin/products/${id}`);
+        return response.status === 200;
       },
     },
     Order: {

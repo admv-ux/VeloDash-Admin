@@ -43,6 +43,7 @@ import { Globe } from 'lucide-react';
 const navigation = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Merchants', href: 'Merchants', icon: Store },
+  { name: 'Products', href: 'Products', icon: Package },
   { name: 'Drivers', href: 'Drivers', icon: Car },
   { name: 'Driver Availability', href: 'DriverAvailability', icon: Clock },
   { name: 'Riders/Buyers', href: 'Riders', icon: Users },

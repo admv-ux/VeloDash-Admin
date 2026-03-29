@@ -6,6 +6,7 @@ import Dashboard from "./Dashboard";
 import DriverAvailability from "./DriverAvailability";
 import Drivers from "./Drivers";
 import Merchants from "./Merchants";
+import Products from "./Products";
 import Notifications from "./Notifications";
 import Orders from "./Orders";
 import Riders from "./Riders";
@@ -33,7 +34,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Notifications', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Products', 'Notifications', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions'];
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }
@@ -89,6 +90,7 @@ export default function Pages() {
                     <Route path="/DriverAvailability" element={<DriverAvailability />} />
                     <Route path="/Drivers" element={<Drivers />} />
                     <Route path="/Merchants" element={<Merchants />} />
+                    <Route path="/Products" element={<Products />} />
                     <Route path="/Notifications" element={<Notifications />} />
                     <Route path="/Orders" element={<Orders />} />
                     <Route path="/Riders" element={<Riders />} />

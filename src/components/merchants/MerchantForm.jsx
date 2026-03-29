@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -25,15 +26,27 @@ export default function MerchantForm({ merchant, onClose }) {
     category: merchant?.category || 'restaurant',
     status: merchant?.status || 'pending',
     commission_rate: merchant?.commission_rate || 15,
+    description: merchant?.description || '',
+    cover_image_url: merchant?.logo_url || merchant?.cover_image_url || '', // Using logo_url from detail view if present
   });
 
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (data) => 
-      merchant 
-        ? base44.entities.Merchant.update(merchant.id, data)
-        : base44.entities.Merchant.create(data),
+    mutationFn: (data) => {
+      if (merchant) {
+        // Two calls if both status/core and profile info changed
+        // But for simplicity, we focus on profile update here
+        return base44.entities.Merchant.updateProfile(merchant.id, {
+          businessName: data.business_name,
+          description: data.description,
+          coverImageUrl: data.cover_image_url,
+          category: data.category,
+          address: data.address,
+        });
+      }
+      return base44.entities.Merchant.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['merchants'] });
       toast.success(merchant ? 'Merchant updated' : 'Merchant created');
@@ -124,6 +137,27 @@ export default function MerchantForm({ merchant, onClose }) {
             onChange={(e) => setFormData({ ...formData, commission_rate: parseFloat(e.target.value) })}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description (No phone numbers allowed)</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="About the merchant..."
+          className="h-24"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cover_image_url">Cover/Logo Image URL</Label>
+        <Input
+          id="cover_image_url"
+          value={formData.cover_image_url}
+          onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
+          placeholder="https://..."
+        />
       </div>
 
       <div className="space-y-2">
