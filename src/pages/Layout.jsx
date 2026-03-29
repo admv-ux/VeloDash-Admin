@@ -33,7 +33,9 @@ import {
   ChevronDown,
   Bike,
   Clock,
-  Play
+  Play,
+  DollarSign,
+  Tags
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/AuthContext';
@@ -43,7 +45,7 @@ import { Globe } from 'lucide-react';
 const navigation = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Merchants', href: 'Merchants', icon: Store },
-  { name: 'Products', href: 'Products', icon: Package },
+  { name: 'Products', href: 'Products', icon: Tags },
   { name: 'Drivers', href: 'Drivers', icon: Car },
   { name: 'Driver Availability', href: 'DriverAvailability', icon: Clock },
   { name: 'Riders/Buyers', href: 'Riders', icon: Users },
