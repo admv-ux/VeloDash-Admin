@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 //const API_BASE_URL = 'http://localhost:3008/api/v1';
-const API_BASE_URL = 'http://api.velocouriersvc.com/api/v1';
+const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
 const API_KEY = 'your-api-key-here';
 
 const client = axios.create({

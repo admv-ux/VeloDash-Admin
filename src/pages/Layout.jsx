@@ -51,8 +51,9 @@ const navigation = [
   { name: 'Riders/Buyers', href: 'Riders', icon: Users },
   { name: 'Orders & Rides', href: 'Orders', icon: Package },
   {
-    title: 'Finances',
-    icon: DollarSign, // Used DollarSign directly
+    name: 'Finances',
+    href: 'Wallets', // Default to wallets for now
+    icon: DollarSign,
     children: [
       { name: 'Platform Revenue', path: '/earnings', roles: ['admin', 'finance_viewer', 'country_manager'] },
       { name: 'User Wallets', path: '/finances/wallets', roles: ['admin', 'finance_viewer'] },
