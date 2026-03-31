@@ -13,8 +13,10 @@ import {
   RefreshCw,
   MoreVertical,
   ChevronRight,
-  User as UserIcon
+  User as UserIcon,
+  FileText
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Wallets = () => {
   const [wallets, setWallets] = useState([]);
@@ -131,6 +133,24 @@ const Wallets = () => {
     );
   };
 
+  const handleExport = async () => {
+    try {
+      const csv = await base44.entities.Reports.exportOrders();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orders_report_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success('Report exported successfully');
+    } catch (err) {
+      toast.error('Failed to export report');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-200 overflow-hidden">
       {/* Main Content */}
@@ -143,12 +163,21 @@ const Wallets = () => {
               </h1>
               <p className="text-slate-500 mt-1">Manage platform balances and transaction history</p>
             </div>
-            <button 
-              onClick={fetchWallets}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors border border-slate-800"
-            >
-              <RefreshCw className={`w-5 h-5 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleExport}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors border border-slate-700 text-sm font-medium"
+              >
+                <FileText className="w-4 h-4 text-slate-400" />
+                Export CSV
+              </button>
+              <button 
+                onClick={fetchWallets}
+                className="p-2 hover:bg-slate-800 rounded-lg transition-colors border border-slate-800"
+              >
+                <RefreshCw className={`w-5 h-5 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">

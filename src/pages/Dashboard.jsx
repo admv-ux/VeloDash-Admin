@@ -10,14 +10,19 @@ import LiveMap from '@/components/dashboard/LiveMap';
 import QuickStats from '@/components/dashboard/QuickStats';
 import RevenueChart from '@/components/dashboard/RevenueChart';
 import UserDistribution from '@/components/dashboard/UserDistribution';
-import { Store, Car, Users, Package, DollarSign, TrendingUp, Calendar } from 'lucide-react';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { Store, Car, Users, Package, DollarSign, TrendingUp, Calendar, Clock, Shield } from 'lucide-react';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/AuthContext';
 
 export default function Dashboard() {
   const { user, currentLocation } = useAuth();
   const [showCommissionDialog, setShowCommissionDialog] = useState(false);
   const [showRevenueDialog, setShowRevenueDialog] = useState(false);
+  const { data: dashboard, isLoading: loadingStats } = useQuery({
+    queryKey: ['dashboard-stats', currentLocation],
+    queryFn: () => base44.entities.Dashboard.getStats(),
+  });
+
   const { data: merchants = [], isLoading: loadingMerchants } = useQuery({
     queryKey: ['merchants', currentLocation],
     queryFn: () => base44.entities.Merchant.list('-created_date', 100),
@@ -43,7 +48,15 @@ export default function Dashboard() {
     queryFn: () => base44.entities.SupportTicket.list('-created_date', 50),
   });
 
-  const isLoading = loadingMerchants || loadingDrivers || loadingRiders || loadingOrders;
+  const isLoading = loadingStats || loadingMerchants || loadingDrivers || loadingRiders || loadingOrders;
+
+  // Consolidate recent activity from all sources
+  const recentActivity = [
+    ...(orders?.map(o => ({ ...o, activityType: 'order', timestamp: o.created_date })) || []),
+    ...(drivers?.map(d => ({ ...d, activityType: 'driver', timestamp: d.created_date })) || []),
+    ...(merchants?.map(m => ({ ...m, activityType: 'merchant', timestamp: m.created_date })) || []),
+    ...(riders?.map(r => ({ ...r, activityType: 'rider', timestamp: r.created_date })) || []),
+  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
 
   // Calculate stats - ensure all values are numbers
   const totalRevenue = Number(orders?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) || 0);
@@ -105,32 +118,32 @@ export default function Dashboard() {
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Merchants"
-          value={merchants.length}
+          title="Total Platform Users"
+          value={dashboard?.overview?.totalUsers || 0}
           change="+12%"
-          changeType="positive"
-          icon={Store}
-          color="violet"
-        />
-        <StatCard
-          title="Active Drivers"
-          value={drivers?.filter(d => d?.status && ['online', 'busy'].includes(d.status)).length || 0}
-          change="+8%"
-          changeType="positive"
-          icon={Car}
-          color="emerald"
-        />
-        <StatCard
-          title="Total Riders"
-          value={riders.length}
-          change="+15%"
           changeType="positive"
           icon={Users}
           color="blue"
         />
         <StatCard
-          title="Today's Revenue"
-          value={`₵${totalRevenue.toFixed(2)}`}
+          title="Monthly Active Users"
+          value={dashboard?.overview?.monthlyActiveUsers || 0}
+          change="+8%"
+          changeType="positive"
+          icon={TrendingUp}
+          color="emerald"
+        />
+        <StatCard
+          title="Active Drivers"
+          value={dashboard?.overview?.activeDrivers || 0}
+          change="+5%"
+          changeType="positive"
+          icon={Car}
+          color="violet"
+        />
+        <StatCard
+          title="Today's Gross Revenue"
+          value={`₵${(dashboard?.today?.orderRevenue || 0 + (dashboard?.today?.rideRevenue || 0)).toFixed(2)}`}
           change="+22%"
           changeType="positive"
           icon={DollarSign}
@@ -143,27 +156,27 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Active Orders/Rides"
-          value={activeOrders}
+          value={dashboard?.today?.totalOrders || 0}
+          subtitle={dashboard?.today?.lastOrderTime ? `Last order ${formatDistanceToNow(new Date(dashboard.today.lastOrderTime))} ago` : 'No recent orders'}
           icon={Package}
           color="indigo"
         />
         <StatCard
-          title="Open Tickets"
-          value={openTickets}
-          icon={TrendingUp}
+          title="Platform Listings"
+          value={dashboard?.overview?.totalListings || 0}
+          icon={Store}
           color="rose"
         />
         <StatCard
-          title="Platform Commission"
-          value={`₵${totalCommission.toFixed(2)}`}
-          icon={DollarSign}
+          title="Avg Delivery Time"
+          value={`${dashboard?.today?.avgCompletionTimeMinutes || 0} mins`}
+          icon={Clock}
           color="emerald"
-          onClick={() => setShowCommissionDialog(true)}
         />
         <StatCard
           title="Pending Verifications"
-          value={(merchants?.filter(m => m?.status === 'pending').length || 0) + (drivers?.filter(d => d?.status === 'pending').length || 0)}
-          icon={Users}
+          value={dashboard?.pendingActions?.pendingMerchantApprovals + dashboard?.pendingActions?.pendingDriverApprovals || 0}
+          icon={Shield}
           color="amber"
         />
       </div>
@@ -177,7 +190,7 @@ export default function Dashboard() {
           <LiveMap drivers={drivers} merchants={merchants} orders={orders} />
         </div>
         <div>
-          <RecentActivity orders={orders} />
+          <RecentActivity activity={recentActivity} />
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import Drivers from "./Drivers";
 import Merchants from "./Merchants";
 import Products from "./Products";
 import Notifications from "./Notifications";
+import Campaigns from "./Campaigns";
 import Orders from "./Orders";
 import Riders from "./Riders";
 import Settings from "./Settings";
@@ -20,6 +21,7 @@ import Team from "./Team";
 import Wallets from './Wallets';
 import Transactions from './Transactions';
 import Earnings from './Earnings';
+import Services from './Services';
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
 import Login from "./Login";
@@ -34,7 +36,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Products', 'Notifications', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services'];
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }
@@ -92,6 +94,7 @@ export default function Pages() {
                     <Route path="/Merchants" element={<Merchants />} />
                     <Route path="/Products" element={<Products />} />
                     <Route path="/Notifications" element={<Notifications />} />
+                    <Route path="/Campaigns" element={<Campaigns />} />
                     <Route path="/Orders" element={<Orders />} />
                     <Route path="/Riders" element={<Riders />} />
                     <Route path="/Settings" element={<Settings />} />
@@ -104,6 +107,7 @@ export default function Pages() {
                     <Route path="/Zones" element={<Zones />} />
                     <Route path="/Waitlist" element={<Waitlist />} />
                     <Route path="/Team" element={<Team />} />
+                    <Route path="/Services" element={<Services />} />
                 </Route>
 
                 {/* Catch-all redirect */}

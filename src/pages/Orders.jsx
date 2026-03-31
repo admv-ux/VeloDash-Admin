@@ -34,7 +34,7 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [showDriverLookup, setShowDriverLookup] = useState(false);
+  const [showManualDispatch, setShowManualDispatch] = useState(false);
   const [lookupOrderNumber, setLookupOrderNumber] = useState('');
   const [foundDriver, setFoundDriver] = useState(null);
 
@@ -76,7 +76,7 @@ export default function Orders() {
         const order = orders.find(o => o.id === variables.id);
         if (order) {
           const driver = drivers.find(d => d.id === order.driver_id);
-          const rider = riders.find(r => r.id === order.rider_id);
+          const rider = riders.find(r => r.id === (order.rider_id || order.customer_id));
           await NotificationService.notifyOrderStatusChange(
             { ...order, ...variables.data },
             variables.data.status,
@@ -86,6 +86,25 @@ export default function Orders() {
         }
       }
     },
+  });
+
+  const assignDriverMutation = useMutation({
+    mutationFn: ({ orderId, driverId }) => base44.entities.Order.assignDriver(orderId, driverId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast.success('Driver assigned successfully');
+      setShowManualDispatch(false);
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
+  const refundMutation = useMutation({
+    mutationFn: ({ userId, amount, reason }) => base44.entities.User.creditWallet(userId, amount, reason),
+    onSuccess: () => {
+      toast.success('Refund issued successfully');
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const updateDriverMutation = useMutation({
@@ -256,8 +275,24 @@ export default function Orders() {
               <Eye className="w-4 h-4 mr-2" /> View Details
             </DropdownMenuItem>
             {row.status === 'pending' && !row.driver_id && (
-              <DropdownMenuItem onClick={() => { setSelectedOrder(row); setShowDetails(true); }}>
-                <Zap className="w-4 h-4 mr-2" /> Auto-Assign Driver
+              <>
+                <DropdownMenuItem onClick={() => { setSelectedOrder(row); setShowDetails(true); }}>
+                  <Zap className="w-4 h-4 mr-2" /> Auto-Assign Driver
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSelectedOrder(row); setShowManualDispatch(true); }}>
+                  <Navigation className="w-4 h-4 mr-2" /> Manual Dispatch
+                </DropdownMenuItem>
+              </>
+            )}
+            {row.payment_status === 'paid' && (
+              <DropdownMenuItem 
+                onClick={() => {
+                  const reason = window.prompt('Reason for refund:');
+                  if (reason) refundMutation.mutate({ userId: row.rider_id || row.customer_id, amount: row.total_amount, reason });
+                }}
+                className="text-amber-600"
+              >
+                <DollarSign className="w-4 h-4 mr-2" /> Issue Refund
               </DropdownMenuItem>
             )}
             {!['completed', 'delivered', 'cancelled'].includes(row.status) && (
@@ -569,6 +604,62 @@ export default function Orders() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Manual Dispatch Dialog */}
+      <Dialog open={showManualDispatch} onOpenChange={setShowManualDispatch}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Manual Driver Assignment - {selectedOrder?.order_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex gap-3 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input placeholder="Search drivers by name, phone or vehicle..." className="pl-10" />
+              </div>
+            </div>
+            
+            <div className="max-h-[400px] overflow-y-auto border rounded-xl divide-y">
+              {drivers?.filter(d => d.status === 'online').length === 0 ? (
+                <p className="p-8 text-center text-slate-500 text-sm">No online drivers available at the moment.</p>
+              ) : (
+                drivers?.filter(d => d.status === 'online').map((driver) => (
+                  <div key={driver.id} className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={driver.photo_url} />
+                        <AvatarFallback className="bg-emerald-100 text-emerald-600 font-medium">
+                          {driver.full_name?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-slate-900">{driver.full_name}</p>
+                        <p className="text-xs text-slate-500">{driver.vehicle_type} • {driver.vehicle_number}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-sm justify-end">
+                          <Star className="w-3 h-3 text-amber-500" />
+                          <span>{driver.rating?.toFixed(1) || '0.0'}</span>
+                        </div>
+                        <p className="text-xs text-slate-400">{driver.total_trips || 0} trips</p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        onClick={() => assignDriverMutation.mutate({ orderId: selectedOrder.id, driverId: driver.id })}
+                        disabled={assignDriverMutation.isPending}
+                        className="bg-violet-600 hover:bg-violet-700 h-8"
+                      >
+                        Assign
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
-export default function StatCard({ title, value, change, changeType, icon: Icon, color, onClick }) {
+export default function StatCard({ title, value, subtitle, change, changeType, icon: Icon, color, onClick }) {
   const colorClasses = {
     violet: 'bg-violet-50 text-violet-600',
     blue: 'bg-blue-50 text-blue-600',
@@ -24,7 +24,10 @@ export default function StatCard({ title, value, change, changeType, icon: Icon,
       <div className="flex items-start justify-between">
         <div className="space-y-3">
           <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
+          <div className="flex flex-col">
+            <p className="text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
+            {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+          </div>
           {change && (
             <div className={cn(
               "flex items-center gap-1 text-sm font-medium",

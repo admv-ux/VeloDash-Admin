@@ -147,6 +147,9 @@ export default function Merchants() {
             <DropdownMenuItem onClick={() => { setSelectedMerchant(row); setShowDetails(true); }}>
               <Eye className="w-4 h-4 mr-2" /> View Details
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSelectedMerchant(row); setShowForm(true); }}>
+              <Plus className="w-4 h-4 mr-2" /> Edit Profile
+            </DropdownMenuItem>
             {row.status === 'pending' && (
               <>
                 <DropdownMenuItem onClick={() => handleStatusChange(row, 'verified')}>

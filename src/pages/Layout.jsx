@@ -35,7 +35,9 @@ import {
   Clock,
   Play,
   DollarSign,
-  Tags
+  Tags,
+  Briefcase,
+  Megaphone
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/AuthContext';
@@ -49,6 +51,7 @@ const navigation = [
   { name: 'Drivers', href: 'Drivers', icon: Car },
   { name: 'Driver Availability', href: 'DriverAvailability', icon: Clock },
   { name: 'Riders/Buyers', href: 'Riders', icon: Users },
+  { name: 'Services', href: 'Services', icon: Briefcase },
   { name: 'Orders & Rides', href: 'Orders', icon: Package },
   {
     name: 'Finances',
@@ -61,6 +64,7 @@ const navigation = [
       { name: 'Fee & Fare Structure', path: '/fee-structure', roles: ['admin', 'finance_viewer', 'country_manager'] },
     ]
   },
+  { name: 'Campaigns', href: 'Campaigns', icon: Megaphone },
   { name: 'Notifications', href: 'Notifications', icon: Bell },
   { name: 'Audit Logs', href: 'AuditLogs', icon: Shield },
   { name: 'Settings', href: 'Settings', icon: Settings },

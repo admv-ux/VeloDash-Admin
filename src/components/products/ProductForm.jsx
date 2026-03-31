@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,20 +23,34 @@ export default function ProductForm({ product, onClose }) {
     price: product?.price || 0,
     isActive: product?.isActive ?? true,
     images: product?.images || [],
+    serviceDurationMin: product?.serviceDurationMin || 60,
+    merchantId: product?.merchantId || '',
   });
   const [newImageUrl, setNewImageUrl] = useState('');
 
   const queryClient = useQueryClient();
 
+  const { data: merchants = [] } = useQuery({
+    queryKey: ['merchants'],
+    queryFn: () => base44.entities.Merchant.list(),
+    enabled: !product,
+  });
+
   const mutation = useMutation({
-    mutationFn: (data) => base44.entities.Product.update(product.id, data),
+    mutationFn: (data) => {
+      if (product) {
+        return base44.entities.Product.update(product.id, data);
+      }
+      return base44.entities.Product.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Product updated');
+      queryClient.invalidateQueries({ queryKey: ['service-catalog'] });
+      toast.success(product ? 'Product updated' : 'Product created');
       onClose();
     },
     onError: (err) => {
-      toast.error('Failed to update product');
+      toast.error('Failed to save product');
     },
   });
 
@@ -63,8 +77,28 @@ export default function ProductForm({ product, onClose }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {!product && (
+        <div className="space-y-2">
+          <Label htmlFor="merchantId">Merchant *</Label>
+          <Select
+            value={formData.merchantId}
+            onValueChange={(v) => setFormData({ ...formData, merchantId: v })}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a merchant" />
+            </SelectTrigger>
+            <SelectContent>
+              {merchants.map((m) => (
+                <SelectItem key={m.id} value={m.id}>{m.business_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <div className="space-y-2">
-        <Label htmlFor="name">Product Name *</Label>
+        <Label htmlFor="name">Product/Service Name *</Label>
         <Input
           id="name"
           value={formData.name}
@@ -79,7 +113,7 @@ export default function ProductForm({ product, onClose }) {
           id="description"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Enter product description..."
+          placeholder="Enter description..."
           className="h-32"
         />
       </div>
@@ -114,10 +148,21 @@ export default function ProductForm({ product, onClose }) {
             onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
           />
         </div>
+        {formData.category === 'services' && (
+          <div className="space-y-2">
+            <Label htmlFor="serviceDurationMin">Duration (Minutes)</Label>
+            <Input
+              id="serviceDurationMin"
+              type="number"
+              value={formData.serviceDurationMin}
+              onChange={(e) => setFormData({ ...formData, serviceDurationMin: parseInt(e.target.value) })}
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label>Product Images</Label>
+        <Label>Images</Label>
         <div className="flex gap-2 mb-2">
           <Input
             placeholder="Paste image URL..."
@@ -157,7 +202,7 @@ export default function ProductForm({ product, onClose }) {
         </Button>
         <Button type="submit" disabled={mutation.isPending} className="bg-violet-600 hover:bg-violet-700">
           {mutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Update Product
+          {product ? 'Update' : 'Create'} Listing
         </Button>
       </div>
     </form>

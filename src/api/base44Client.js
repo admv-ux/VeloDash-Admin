@@ -110,6 +110,10 @@ export const base44 = {
         const response = await client.get('/admin/products', { params });
         return response.data;
       },
+      async create(data) {
+        const response = await client.post('/admin/products', data);
+        return response.data;
+      },
       async update(id, data) {
         const response = await client.patch(`/admin/products/${id}`, data);
         return response.data;
@@ -254,7 +258,128 @@ export const base44 = {
         return response.data;
       },
     },
-    // Add other entities as needed...
+    Dashboard: {
+      async getStats() {
+        const response = await client.get('/admin/dashboard');
+        return response.data;
+      },
+      async getReport(params = {}) {
+        const response = await client.get('/admin/revenue-report', { params });
+        return response.data;
+      },
+    },
+    Service: {
+      async listProviders(params = {}) {
+        const response = await client.get('/admin/services/providers', { params });
+        return response.data;
+      },
+      async listBookings(params = {}) {
+        const response = await client.get('/admin/services/bookings', { params });
+        return response.data;
+      },
+      async getStats() {
+        const response = await client.get('/admin/services/stats');
+        return response.data;
+      },
+      async approveProvider(id) {
+        const response = await client.patch(`/admin/services/providers/${id}/approve`);
+        return response.data;
+      },
+    },
+    Promo: {
+      async list() {
+        const response = await client.get('/admin/promos');
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/promos', data);
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/promos/${id}`, data);
+        return response.data;
+      },
+      async delete(id) {
+        const response = await client.delete(`/admin/promos/${id}`);
+        return response.status === 204;
+      },
+    },
+    Banner: {
+      async list() {
+        const response = await client.get('/admin/banners');
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/banners', data);
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/banners/${id}`, data);
+        return response.data;
+      },
+      async delete(id) {
+        const response = await client.delete(`/admin/banners/${id}`);
+        return response.status === 204;
+      },
+    },
+    Notification: {
+      async list(sort = '-created_at', limit = 100) {
+        const response = await client.get('/admin/notifications', { params: { sort, limit } });
+        return response.data;
+      },
+      async broadcast(data) {
+        const response = await client.post('/admin/broadcast-notification', data);
+        return response.data;
+      },
+      async delete(id) {
+        const response = await client.delete(`/admin/notifications/${id}`);
+        return response.status === 204;
+      },
+    },
+    SupportTicket: {
+      async list(sort = '-created_date', limit = 200) {
+        const response = await client.get('/admin/support-tickets', { params: { sort, limit } });
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/support-tickets/${id}`, data);
+        return response.data;
+      },
+    },
+    Reports: {
+      async exportOrders(filters = {}) {
+        const response = await client.get('/admin/export-orders', { params: filters });
+        return response.data;
+      },
+    },
+    Settings: {
+      async list() {
+        const response = await client.get('/admin/platform-settings');
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/platform-settings/${id}`, data);
+        return response.data;
+      },
+    },
+    Referral: {
+      async getStats() {
+        const response = await client.get('/admin/referrals/stats');
+        return response.data;
+      },
+      async list(limit = 100) {
+        const response = await client.get('/admin/referrals', { params: { limit } });
+        return response.data;
+      },
+      async getCode(userId) {
+        const response = await client.get(`/admin/referrals/code/${userId}`);
+        return response.data;
+      },
+      async updateStatus(id, status) {
+        const response = await client.patch(`/admin/referrals/${id}`, { status });
+        return response.data;
+      },
+    },
   },
   Setup: {
     async createAdmin(data) {
