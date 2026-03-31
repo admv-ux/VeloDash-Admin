@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-//const API_BASE_URL = 'http://localhost:3008/api/v1';
-const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
+const API_BASE_URL = 'http://localhost:3008/api/v1';
+//const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
 const API_KEY = 'your-api-key-here';
 
 const client = axios.create({
@@ -377,6 +377,12 @@ export const base44 = {
       },
       async updateStatus(id, status) {
         const response = await client.patch(`/admin/referrals/${id}`, { status });
+        return response.data;
+      },
+    },
+    Broadcast: {
+      async list() {
+        const response = await client.get('/admin/broadcasts');
         return response.data;
       },
     },

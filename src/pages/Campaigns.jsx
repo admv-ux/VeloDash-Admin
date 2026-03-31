@@ -228,6 +228,59 @@ const ReferralList = ({ referrals, isLoading, onUpdateStatus }) => {
   );
 };
 
+const BroadcastList = ({ broadcasts, isLoading }) => {
+  const columns = [
+    {
+      header: 'Title',
+      cell: (row) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-slate-900">{row.title}</span>
+          <span className="text-xs text-slate-500 line-clamp-1">{row.body}</span>
+        </div>
+      ),
+    },
+    {
+      header: 'Target',
+      cell: (row) => (
+        <span className="text-sm text-slate-600 capitalize">{row.targetGroup}</span>
+      ),
+    },
+    {
+      header: 'Recipients',
+      cell: (row) => (
+        <span className="text-sm font-medium text-indigo-600">
+          {row.userCount} users
+        </span>
+      ),
+    },
+    {
+      header: 'Sender',
+      cell: (row) => (
+        <span className="text-sm text-slate-500">
+          {row.admin?.full_name || 'Admin'}
+        </span>
+      ),
+    },
+    {
+      header: 'Date',
+      cell: (row) => (
+        <span className="text-sm text-slate-500">
+          {format(new Date(row.createdAt), 'MMM d, HH:mm')}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      data={broadcasts}
+      isLoading={isLoading}
+      emptyMessage="No broadcast history found"
+    />
+  );
+};
+
 // --- Main Page ---
 
 export default function Campaigns() {
@@ -264,6 +317,25 @@ export default function Campaigns() {
     queryFn: () => base44.entities.Referral.getStats(),
     enabled: activeTab === 'referrals',
   });
+
+  const { data: broadcasts = [], isLoading: loadingBroadcasts } = useQuery({
+    queryKey: ['broadcasts'],
+    queryFn: () => base44.entities.Broadcast.list(),
+    enabled: activeTab === 'broadcasts',
+  });
+
+  const { data: users = [], isLoading: loadingUsers } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.Users.list(),
+    enabled: showReferralCodeForm,
+  });
+
+  const [userSearch, setUserSearch] = useState('');
+  const filteredUsers = users.filter(u => 
+    (u.full_name?.toLowerCase().includes(userSearch.toLowerCase())) ||
+    (u.phoneNumber?.includes(userSearch)) ||
+    (u.id === userSearch)
+  ).slice(0, 50); // Limit to 50 for performance
 
   // Mutations
   const promoMutation = useMutation({
@@ -309,6 +381,7 @@ export default function Campaigns() {
   const broadcastMutation = useMutation({
     mutationFn: (data) => base44.entities.Notification.broadcast(data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
       toast.success('Broadcast sent successfully');
       setShowBroadcastForm(false);
     },
@@ -416,18 +489,16 @@ export default function Campaigns() {
           </TabsContent>
 
           <TabsContent value="broadcasts" className="mt-0 outline-none">
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                <Megaphone className="w-8 h-8 text-emerald-600" />
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button onClick={() => setShowBroadcastForm(true)} variant="outline" size="sm">
+                   <Megaphone className="w-4 h-4 mr-2" /> Send New Broadcast
+                </Button>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900">Broadcast Communication</h3>
-              <p className="text-slate-500 max-w-md mt-2">
-                Send manual notifications to specific user groups or the entire platform. 
-                Keep your users informed about new features, service updates, or promotions.
-              </p>
-              <Button onClick={() => setShowBroadcastForm(true)} className="mt-6 bg-emerald-600 hover:bg-emerald-700">
-                Create New Broadcast
-              </Button>
+              <BroadcastList 
+                broadcasts={broadcasts} 
+                isLoading={loadingBroadcasts} 
+              />
             </div>
           </TabsContent>
 
@@ -655,8 +726,31 @@ export default function Campaigns() {
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label>User ID</Label>
-              <Input name="userId" placeholder="Enter user UUID" required />
+              <Label>Select User</Label>
+              <div className="space-y-2">
+                <Input 
+                  placeholder="Search name or phone..." 
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <Select name="userId" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                     {filteredUsers.length === 0 ? (
+                       <div className="p-2 text-sm text-slate-500 text-center">No users found</div>
+                     ) : (
+                       filteredUsers.map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                           {u.full_name || 'No Name'} | {u.phoneNumber}
+                        </SelectItem>
+                       ))
+                     )}
+                  </SelectContent>
+                </Select>
+              </div>
               <p className="text-xs text-slate-500">
                 A unique referral code will be generated for this user if they don't already have one.
               </p>
