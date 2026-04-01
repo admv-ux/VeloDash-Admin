@@ -22,7 +22,8 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import LiveTrackingMap from '@/components/orders/LiveTrackingMap';
 import AutoDispatchButton from '@/components/orders/AutoDispatchButton';
 import { NotificationService } from '@/components/notifications/NotificationService';
-import { MoreHorizontal, Eye, XCircle, MapPin, Package, Car, Clock, DollarSign, Search, Phone, Navigation, Ban, LogOut, Zap } from 'lucide-react';
+import { MoreHorizontal, Eye, XCircle, MapPin, Package, Car, Clock, DollarSign, Search, Phone, Navigation, Ban, LogOut, Zap, Star } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/AuthContext';
@@ -37,6 +38,7 @@ export default function Orders() {
   const [showManualDispatch, setShowManualDispatch] = useState(false);
   const [lookupOrderNumber, setLookupOrderNumber] = useState('');
   const [foundDriver, setFoundDriver] = useState(null);
+  const [showDriverLookup, setShowDriverLookup] = useState(false);
 
   const queryClient = useQueryClient();
 

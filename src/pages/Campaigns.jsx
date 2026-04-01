@@ -290,6 +290,8 @@ export default function Campaigns() {
   const [showBroadcastForm, setShowBroadcastForm] = useState(false);
   const [showReferralCodeForm, setShowReferralCodeForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [bannerImage, setBannerImage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -412,7 +414,26 @@ export default function Campaigns() {
 
   const handleEditBanner = (banner) => {
     setEditingItem(banner);
+    setBannerImage(banner.imageUrl || '');
     setShowBannerForm(true);
+  };
+
+  const handleBannerFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBannerImage(reader.result);
+      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleBroadcast = (e) => {
@@ -436,7 +457,7 @@ export default function Campaigns() {
             </Button>
           )}
           {activeTab === 'banners' && (
-            <Button onClick={() => { setEditingItem(null); setShowBannerForm(true); }} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={() => { setEditingItem(null); setBannerImage(''); setShowBannerForm(true); }} className="bg-indigo-600 hover:bg-indigo-700">
               <ImageIcon className="w-4 h-4 mr-2" /> New Banner
             </Button>
           )}
@@ -657,6 +678,13 @@ export default function Campaigns() {
               const data = Object.fromEntries(formData.entries());
               data.isActive = formData.get('isActive') === 'on';
               data.priority = Number(data.priority || 0);
+              data.imageUrl = bannerImage;
+              
+              if (!data.imageUrl) {
+                toast.error('Please upload an image');
+                return;
+              }
+              
               bannerMutation.mutate(data);
             }}
             className="space-y-4"
@@ -666,8 +694,31 @@ export default function Campaigns() {
               <Input name="title" defaultValue={editingItem?.title} required />
             </div>
             <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input name="imageUrl" defaultValue={editingItem?.imageUrl} required />
+              <Label>Banner Image (Base64)</Label>
+              <div className="flex flex-col gap-4">
+                {bannerImage && (
+                  <div className="relative group w-full h-40 rounded-xl overflow-hidden border bg-slate-50">
+                    <img src={bannerImage} alt="Preview" className="w-full h-full object-contain" />
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setBannerImage('')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+                <Input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleBannerFileChange}
+                  disabled={isUploading}
+                  className="cursor-pointer"
+                />
+                {isUploading && <p className="text-sm text-slate-500 animate-pulse text-center">Processing image...</p>}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

@@ -8,6 +8,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -16,9 +18,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { MoreHorizontal, Eye, CheckCircle, Ban, Trash2, Package, Car, Wallet } from 'lucide-react';
+import { MoreHorizontal, Eye, CheckCircle, Ban, Trash2, Package, Car, Wallet, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/AuthContext';
@@ -29,6 +34,10 @@ export default function Riders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRider, setSelectedRider] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifBody, setNotifBody] = useState('');
+  const [isSendingNotif, setIsSendingNotif] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -70,35 +79,45 @@ export default function Riders() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleSendNotification = async () => {
+    if (!selectedRider || !notifTitle || !notifBody) return;
+    setIsSendingNotif(true);
+    try {
+      await base44.entities.Notification.sendPrivate(selectedRider.id, {
+        title: notifTitle,
+        body: notifBody,
+        data: { type: 'admin_private_message' }
+      });
+      toast.success('Notification sent successfully');
+      setShowNotificationDialog(false);
+      setNotifTitle('');
+      setNotifBody('');
+    } catch (error) {
+      toast.error('Failed to send notification');
+    } finally {
+      setIsSendingNotif(false);
+    }
+  };
+
   const columns = [
     {
-      header: 'Rider',
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={row.photo_url} />
-            <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
-              {row.full_name?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-medium text-slate-900">{row.full_name}</p>
-              {row.is_verified && (
-                <CheckCircle className="w-4 h-4 text-blue-500" />
-              )}
-            </div>
-            <p className="text-sm text-slate-500">{row.email}</p>
-          </div>
-        </div>
-      ),
+      header: 'First Name',
+      cell: (row) => <span className="font-medium text-slate-900">{row.first_name}</span>,
+    },
+    {
+      header: 'Last Name',
+      cell: (row) => <span className="font-medium text-slate-900">{row.last_name}</span>,
+    },
+    {
+      header: 'Country',
+      cell: (row) => <span className="text-sm text-slate-600 uppercase font-semibold">{row.country || 'GH'}</span>,
     },
     {
       header: 'Contact',
       cell: (row) => (
         <div>
           <p className="text-sm text-slate-900">{row.phone}</p>
-          <p className="text-sm text-slate-500 truncate max-w-[200px]">{row.city || row.address || '-'}</p>
+          <p className="text-sm text-slate-500 truncate max-w-[200px]">{row.email}</p>
         </div>
       ),
     },
@@ -125,10 +144,10 @@ export default function Riders() {
       header: 'Spending',
       cell: (row) => (
         <div className="space-y-1">
-          <p className="font-medium text-slate-900">₵{(row.total_spent || 0).toFixed(2)}</p>
+          <p className="font-medium text-slate-900">${(row.total_spent || 0).toFixed(2)}</p>
           <div className="flex items-center gap-1 text-sm text-slate-500">
             <Wallet className="w-3 h-3" />
-            ₵{(row.wallet_balance || 0).toFixed(2)}
+            ${(row.wallet_balance || 0).toFixed(2)}
           </div>
         </div>
       ),
@@ -153,6 +172,9 @@ export default function Riders() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => { setSelectedRider(row); setShowDetails(true); }}>
               <Eye className="w-4 h-4 mr-2" /> View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSelectedRider(row); setShowNotificationDialog(true); }}>
+              <MessageSquare className="w-4 h-4 mr-2 text-blue-600" /> Send Message
             </DropdownMenuItem>
             {!row.is_verified && (
               <DropdownMenuItem onClick={() => handleVerify(row)}>
@@ -266,16 +288,58 @@ export default function Riders() {
                   <p className="text-sm text-slate-500">Rides</p>
                 </div>
                 <div className="text-center p-4 bg-emerald-50 rounded-xl">
-                  <p className="text-2xl font-bold text-emerald-600">₵{(selectedRider.total_spent || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-emerald-600">${(selectedRider.total_spent || 0).toFixed(2)}</p>
                   <p className="text-sm text-slate-500">Total Spent</p>
                 </div>
                 <div className="text-center p-4 bg-amber-50 rounded-xl">
-                  <p className="text-2xl font-bold text-amber-600">₵{(selectedRider.wallet_balance || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-amber-600">${(selectedRider.wallet_balance || 0).toFixed(2)}</p>
                   <p className="text-sm text-slate-500">Wallet</p>
                 </div>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Notification Dialog */}
+      <Dialog open={showNotificationDialog} onOpenChange={setShowNotificationDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Private Message</DialogTitle>
+            <DialogDescription>
+              To: {selectedRider?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Message Title</Label>
+              <Input 
+                id="title" 
+                placeholder="e.g. Exclusive Discount Just for You!" 
+                value={notifTitle}
+                onChange={(e) => setNotifTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="body">Message Body</Label>
+              <Textarea 
+                id="body" 
+                placeholder="Type your message here..." 
+                className="min-h-[100px]"
+                value={notifBody}
+                onChange={(e) => setNotifBody(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNotificationDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={handleSendNotification} 
+              disabled={!notifTitle || !notifBody || isSendingNotif}
+            >
+              {isSendingNotif ? 'Sending...' : 'Send Notification'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

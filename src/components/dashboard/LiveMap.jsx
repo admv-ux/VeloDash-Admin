@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
-import { Car, Store, MapPin, Eye, EyeOff, Map as MapIcon, Layers, Package } from 'lucide-react';
+import { Car, Store, MapPin, Map as MapIcon, Layers, Package } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ const CITIES = {
   Takoradi: [4.8917, -1.7514],
 };
 
-export default function LiveMap({ drivers, merchants, orders }) {
+export default function LiveMap({ drivers, merchants, orders, zones = [], onAdjustSurge }) {
   const [selectedCity, setSelectedCity] = useState('Accra');
   const [filters, setFilters] = useState({
     drivers: true,
@@ -28,10 +28,17 @@ export default function LiveMap({ drivers, merchants, orders }) {
   const toggleFilter = (key) => {
     setFilters(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  const handleHeatmapClick = () => {
+    const zone = zones.find(z => z.city === selectedCity || z.name.includes(selectedCity));
+    if (zone) {
+      onAdjustSurge?.(zone);
+    }
+  };
   
   return (
     <Card className="bg-white border-0 shadow-sm overflow-hidden h-full flex flex-col">
-      <CardHeader className="pb-4 border-b">
+      <CardHeader className="pb-4 border-b relative z-50">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
@@ -46,7 +53,7 @@ export default function LiveMap({ drivers, merchants, orders }) {
               <SelectTrigger className="w-[140px] h-9 text-sm">
                 <SelectValue placeholder="Select City" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[1001]">
                 {Object.keys(CITIES).map(city => (
                   <SelectItem key={city} value={city}>{city}</SelectItem>
                 ))}
@@ -114,8 +121,11 @@ export default function LiveMap({ drivers, merchants, orders }) {
                 center={[order.dropoff_latitude, order.dropoff_longitude]}
                 radius={25}
                 fillColor="#f43f5e"
-                fillOpacity={0.1}
+                fillOpacity={0.15}
                 stroke={false}
+                eventHandlers={{
+                  click: handleHeatmapClick
+                }}
               />
             ))}
 

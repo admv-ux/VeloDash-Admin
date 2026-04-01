@@ -35,6 +35,13 @@ export default function Services() {
   const [search, setSearch] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [detailData, setDetailData] = useState(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+
+  const handleStatClick = (title, breakdown) => {
+    setDetailData({ title, breakdown });
+    setShowDetailDialog(true);
+  };
 
   // Queries
   const { data: stats } = useQuery({
@@ -83,6 +90,7 @@ export default function Services() {
           value={stats?.totalProviders || 0}
           icon={Users}
           color="blue"
+          onClick={() => handleStatClick("Total Providers", stats?.totalProvidersByCountry)}
         />
         <StatCard
           title="Active Providers"
@@ -312,6 +320,37 @@ export default function Services() {
             product={selectedItem} 
             onClose={() => setShowForm(false)} 
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Summary Detail Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{detailData?.title} Breakdown</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              {detailData?.breakdown && Object.entries(detailData.breakdown).sort(([, a], [, b]) => b - a).map(([country, count]) => (
+                <div key={country} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 uppercase">
+                      {country.substring(0, 2)}
+                    </div>
+                    <span className="font-medium text-slate-700">{country}</span>
+                  </div>
+                  <span className="text-lg font-bold text-slate-900">
+                    {count.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+              {(!detailData?.breakdown || Object.keys(detailData.breakdown).length === 0) && (
+                <div className="text-center py-8 text-slate-500">
+                  No country data available
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
