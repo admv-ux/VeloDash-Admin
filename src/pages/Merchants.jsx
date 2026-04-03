@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -152,7 +153,7 @@ export default function Merchants() {
             </DropdownMenuItem>
             {row.status === 'pending' && (
               <>
-                <DropdownMenuItem onClick={() => handleStatusChange(row, 'verified')}>
+                <DropdownMenuItem onClick={() => handleStatusChange(row, 'approved')}>
                   <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" /> Approve
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleStatusChange(row, 'rejected')}>
@@ -160,13 +161,13 @@ export default function Merchants() {
                 </DropdownMenuItem>
               </>
             )}
-            {row.status === 'verified' && (
+            {row.status === 'approved' && (
               <DropdownMenuItem onClick={() => handleStatusChange(row, 'suspended')}>
                 <Ban className="w-4 h-4 mr-2 text-amber-600" /> Suspend
               </DropdownMenuItem>
             )}
             {row.status === 'suspended' && (
-              <DropdownMenuItem onClick={() => handleStatusChange(row, 'verified')}>
+              <DropdownMenuItem onClick={() => handleStatusChange(row, 'approved')}>
                 <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" /> Reactivate
               </DropdownMenuItem>
             )}
@@ -184,7 +185,7 @@ export default function Merchants() {
 
   const filterOptions = [
     { value: 'pending', label: 'Pending' },
-    { value: 'verified', label: 'Verified' },
+    { value: 'approved', label: 'Approved' },
     { value: 'suspended', label: 'Suspended' },
     { value: 'rejected', label: 'Rejected' },
   ];
@@ -222,6 +223,9 @@ export default function Merchants() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{selectedMerchant ? 'Edit Merchant' : 'Add New Merchant'}</DialogTitle>
+            <DialogDescription>
+              {selectedMerchant ? 'Update the merchant profile details below.' : 'Enter the details for the new merchant account.'}
+            </DialogDescription>
           </DialogHeader>
           <MerchantForm
             merchant={selectedMerchant}
@@ -235,6 +239,9 @@ export default function Merchants() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Merchant Details</DialogTitle>
+            <DialogDescription>
+              Viewing full profile and activity for {selectedMerchant?.business_name}.
+            </DialogDescription>
           </DialogHeader>
           {selectedMerchant && (
             <div className="space-y-6">

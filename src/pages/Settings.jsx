@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { 
   DollarSign, Loader2, Percent, Globe, Save
 } from 'lucide-react';
+import { getCountryName } from '@/utils/country';
 
 export default function Settings() {
   const [selectedCountry, setSelectedCountry] = useState('GH');
@@ -91,7 +92,7 @@ export default function Settings() {
                 className="border-0 bg-transparent text-sm font-semibold focus:ring-0 p-0 pr-8"
             >
                 {platformSettings.map(s => (
-                    <option key={s.country} value={s.country}>{s.country} ({s.currency})</option>
+                    <option key={s.country} value={s.country}>{getCountryName(s.country)} ({s.currency})</option>
                 ))}
             </select>
           </div>
@@ -117,7 +118,7 @@ export default function Settings() {
           <Card className="bg-white border-0 shadow-sm rounded-2xl p-6">
             <CardHeader className="px-0 pt-0">
               <CardTitle>Regional Logistics Costs</CardTitle>
-              <CardDescription>Base operating fees for the {selectedCountry} regional market</CardDescription>
+              <CardDescription>Base operating fees for the {getCountryName(selectedCountry)} regional market</CardDescription>
             </CardHeader>
             <CardContent className="px-0 pb-0 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

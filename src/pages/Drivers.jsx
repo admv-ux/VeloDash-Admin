@@ -19,6 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import DriverForm from '@/components/drivers/DriverForm';
+import AvailabilityManager from '@/components/drivers/AvailabilityManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban, Trash2, Plus, Star, Car, Bike, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -252,79 +254,93 @@ export default function Drivers() {
             <DialogTitle>Driver Details</DialogTitle>
           </DialogHeader>
           {selectedDriver && (
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={selectedDriver.photo_url} />
-                  <AvatarFallback className="bg-emerald-100 text-emerald-600 text-xl">
-                    {selectedDriver.full_name?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-semibold">{selectedDriver.full_name}</h3>
-                    <StatusBadge status={selectedDriver.status} />
+            <Tabs defaultValue="info" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="info">General Information</TabsTrigger>
+                <TabsTrigger value="availability">Availability & Schedule</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="info" className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={selectedDriver.photo_url} />
+                    <AvatarFallback className="bg-emerald-100 text-emerald-600 text-xl">
+                      {selectedDriver.full_name?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-xl font-semibold">{selectedDriver.full_name}</h3>
+                      <StatusBadge status={selectedDriver.status} />
+                    </div>
+                    <p className="text-slate-500 capitalize">{selectedDriver.service_type?.replace(/_/g, ' ')}</p>
                   </div>
-                  <p className="text-slate-500 capitalize">{selectedDriver.service_type?.replace(/_/g, ' ')}</p>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-500">Email</p>
-                  <p className="font-medium">{selectedDriver.email}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <p className="text-sm text-slate-500">Email</p>
+                    <p className="font-medium">{selectedDriver.email}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <p className="text-sm text-slate-500">Phone</p>
+                    <p className="font-medium">{selectedDriver.phone}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <p className="text-sm text-slate-500">Vehicle Type</p>
+                    <p className="font-medium capitalize">{selectedDriver.vehicle_type}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <p className="text-sm text-slate-500">Vehicle Number</p>
+                    <p className="font-medium">{selectedDriver.vehicle_number}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <p className="text-sm text-slate-500">License Number</p>
+                    <p className="font-medium">{selectedDriver.license_number || '-'}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <p className="text-sm text-slate-500">Wallet Balance</p>
+                    <p className="font-medium">₵{(selectedDriver.wallet_balance || 0).toFixed(2)}</p>
+                  </div>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-500">Phone</p>
-                  <p className="font-medium">{selectedDriver.phone}</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-500">Vehicle Type</p>
-                  <p className="font-medium capitalize">{selectedDriver.vehicle_type}</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-500">Vehicle Number</p>
-                  <p className="font-medium">{selectedDriver.vehicle_number}</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-500">License Number</p>
-                  <p className="font-medium">{selectedDriver.license_number || '-'}</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-500">Wallet Balance</p>
-                  <p className="font-medium">₵{(selectedDriver.wallet_balance || 0).toFixed(2)}</p>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-emerald-50 rounded-xl">
-                  <p className="text-2xl font-bold text-emerald-600">{selectedDriver.total_trips || 0}</p>
-                  <p className="text-sm text-slate-500">Total Trips</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-emerald-50 rounded-xl">
+                    <p className="text-2xl font-bold text-emerald-600">{selectedDriver.total_trips || 0}</p>
+                    <p className="text-sm text-slate-500">Total Trips</p>
+                  </div>
+                  <div className="text-center p-4 bg-violet-50 rounded-xl">
+                    <p className="text-2xl font-bold text-violet-600">₵{(selectedDriver.total_earnings || 0).toFixed(2)}</p>
+                    <p className="text-sm text-slate-500">Earnings</p>
+                  </div>
+                  <div className="text-center p-4 bg-amber-50 rounded-xl">
+                    <p className="text-2xl font-bold text-amber-600">{selectedDriver.rating?.toFixed(1) || '0.0'}</p>
+                    <p className="text-sm text-slate-500">Rating</p>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-violet-50 rounded-xl">
-                  <p className="text-2xl font-bold text-violet-600">₵{(selectedDriver.total_earnings || 0).toFixed(2)}</p>
-                  <p className="text-sm text-slate-500">Earnings</p>
-                </div>
-                <div className="text-center p-4 bg-amber-50 rounded-xl">
-                  <p className="text-2xl font-bold text-amber-600">{selectedDriver.rating?.toFixed(1) || '0.0'}</p>
-                  <p className="text-sm text-slate-500">Rating</p>
-                </div>
-              </div>
 
-              {selectedDriver.documents_url && (
-                <div>
-                  <p className="text-sm text-slate-500 mb-2">Documents</p>
-                  <a 
-                    href={selectedDriver.documents_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-emerald-600 hover:underline"
-                  >
-                    View Documents
-                  </a>
-                </div>
-              )}
-            </div>
+                {selectedDriver.documents_url && (
+                  <div>
+                    <p className="text-sm text-slate-500 mb-2">Documents</p>
+                    <a 
+                      href={selectedDriver.documents_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-emerald-600 hover:underline"
+                    >
+                      View Documents
+                    </a>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="availability" className="space-y-4">
+                <AvailabilityManager 
+                  driver={selectedDriver} 
+                  onUpdate={(data) => updateMutation.mutate({ id: selectedDriver.id, data })} 
+                />
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>

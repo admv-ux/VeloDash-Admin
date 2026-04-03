@@ -12,6 +12,7 @@ import LiveMap from '@/components/dashboard/LiveMap';
 import QuickStats from '@/components/dashboard/QuickStats';
 import RevenueChart from '@/components/dashboard/RevenueChart';
 import UserDistribution from '@/components/dashboard/UserDistribution';
+import { getCountryName } from '@/utils/country';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -279,6 +280,9 @@ export default function Dashboard() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Revenue Breakdown</DialogTitle>
+            <DialogDescription>
+              Detailed breakdown of platform revenue for the current period.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
             <Card className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
@@ -330,7 +334,10 @@ export default function Dashboard() {
       <Dialog open={showCommissionDialog} onOpenChange={setShowCommissionDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Platform Commission Breakdown</DialogTitle>
+            <DialogTitle>Commission Overview</DialogTitle>
+            <DialogDescription>
+              Detailed breakdown of platform commissions for the current period.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
             <Card className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
@@ -383,6 +390,9 @@ export default function Dashboard() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{detailData?.title} Breakdown</DialogTitle>
+            <DialogDescription>
+              Country-wise distribution of {detailData?.title.toLowerCase()}.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">

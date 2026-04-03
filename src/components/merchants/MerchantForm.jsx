@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 
 export default function MerchantForm({ merchant, onClose }) {
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     business_name: merchant?.business_name || '',
     owner_name: merchant?.owner_name || '',
@@ -27,16 +28,23 @@ export default function MerchantForm({ merchant, onClose }) {
     status: merchant?.status || 'pending',
     commission_rate: merchant?.commission_rate || 15,
     description: merchant?.description || '',
-    cover_image_url: merchant?.logo_url || merchant?.cover_image_url || '', // Using logo_url from detail view if present
+    cover_image_url: merchant?.logo_url || merchant?.cover_image_url || '',
   });
 
   const queryClient = useQueryClient();
 
+  const uploadMutation = useMutation({
+    mutationFn: (file) => base44.entities.Upload.uploadFile(file, 'merchants'),
+    onSuccess: (res) => {
+      setFormData(prev => ({ ...prev, cover_image_url: res.data.url }));
+      toast.success('Image uploaded successfully');
+    },
+    onError: (err) => toast.error('Image upload failed'),
+  });
+
   const mutation = useMutation({
     mutationFn: (data) => {
       if (merchant) {
-        // Two calls if both status/core and profile info changed
-        // But for simplicity, we focus on profile update here
         return base44.entities.Merchant.updateProfile(merchant.id, {
           businessName: data.business_name,
           description: data.description,
@@ -45,7 +53,18 @@ export default function MerchantForm({ merchant, onClose }) {
           address: data.address,
         });
       }
-      return base44.entities.Merchant.create(data);
+      return base44.entities.Merchant.create({
+        businessName: data.business_name,
+        businessEmail: data.email,
+        phone: data.phone,
+        ownerName: data.owner_name,
+        category: data.category,
+        address: data.address,
+        city: data.city,
+        description: data.description,
+        coverImageUrl: data.cover_image_url,
+        commissionRate: data.commission_rate
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['merchants'] });
@@ -56,6 +75,17 @@ export default function MerchantForm({ merchant, onClose }) {
       toast.error('Failed to save merchant');
     },
   });
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      uploadMutation.mutate(file);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -151,12 +181,56 @@ export default function MerchantForm({ merchant, onClose }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="cover_image_url">Cover/Logo Image URL</Label>
-        <Input
-          id="cover_image_url"
-          value={formData.cover_image_url}
-          onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
-          placeholder="https://..."
+        <Label>Cover/Logo Image</Label>
+        <div 
+          onClick={() => fileInputRef.current?.click()}
+          className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer group relative overflow-hidden h-32"
+        >
+          {formData.cover_image_url ? (
+            <>
+              <img 
+                src={formData.cover_image_url} 
+                alt="Preview" 
+                className="absolute inset-0 w-full h-full object-cover" 
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="absolute top-2 right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFormData({ ...formData, cover_image_url: '' });
+                }}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
+                {uploadMutation.isPending ? (
+                  <Loader2 className="w-5 h-5 text-violet-600 animate-spin" />
+                ) : (
+                  <Upload className="w-5 h-5 text-slate-400 group-hover:text-violet-600" />
+                )}
+              </div>
+              <p className="text-sm font-medium text-slate-600 group-hover:text-violet-700">
+                {uploadMutation.isPending ? 'Uploading...' : 'Click to upload logo'}
+              </p>
+              <p className="text-xs text-slate-400">PNG, JPG or WebP up to 5MB</p>
+            </>
+          )}
+        </div>
+        <input 
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
         />
       </div>
 

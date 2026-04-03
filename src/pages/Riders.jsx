@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getCountryName } from '@/utils/country';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -110,7 +111,7 @@ export default function Riders() {
     },
     {
       header: 'Country',
-      cell: (row) => <span className="text-sm text-slate-600 uppercase font-semibold">{row.country || 'GH'}</span>,
+      cell: (row) => <span className="text-sm text-slate-600 uppercase font-semibold">{getCountryName(row.country || 'GH')}</span>,
     },
     {
       header: 'Contact',

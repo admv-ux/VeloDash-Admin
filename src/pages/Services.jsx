@@ -17,6 +17,7 @@ import {
   Plus
 } from 'lucide-react';
 import { base44, getErrorMessage } from '@/api/base44Client';
+import { getCountryName } from '@/utils/country';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import StatCard from '@/components/dashboard/StatCard';
 import ProductForm from '@/components/products/ProductForm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 export default function Services() {
@@ -315,6 +316,9 @@ export default function Services() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{selectedItem ? 'Edit Service Item' : 'Add New Service Item'}</DialogTitle>
+            <DialogDescription>
+              {selectedItem ? 'Update the details for this service item.' : 'Create a new service item for the platform.'}
+            </DialogDescription>
           </DialogHeader>
           <ProductForm 
             product={selectedItem} 
@@ -328,6 +332,9 @@ export default function Services() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{detailData?.title} Breakdown</DialogTitle>
+            <DialogDescription>
+              Country-wise distribution of providers for {detailData?.title.toLowerCase()}.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">

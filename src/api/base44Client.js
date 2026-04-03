@@ -3,7 +3,7 @@ import axios from 'axios';
 //const API_BASE_URL = 'http://localhost:3008/api/v1';
 const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
 const API_KEY = 'your-api-key-here';
-
+//const API_KEY = 'velo-key-2024';
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -94,10 +94,6 @@ export const base44 = {
     Merchant: {
       async list() {
         const response = await client.get('/admin/merchants');
-        return response.data;
-      },
-      async create(data) {
-        const response = await client.post('/admin/merchants', data);
         return response.data;
       },
       async create(data) {
@@ -408,24 +404,15 @@ export const base44 = {
         return response.data;
       },
     },
-    Upload: {
-      async uploadFile(file, category, phoneNumber) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('category', category);
-        if (phoneNumber) formData.append('phoneNumber', phoneNumber);
-        
-        const response = await client.post('/uploads', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        return response.data;
-      },
-    },
     Broadcast: {
       async list() {
         const response = await client.get('/admin/broadcasts');
+        return response.data;
+      },
+    },
+    Leaderboard: {
+      async get(type, country) {
+        const response = await client.get('/admin/leaderboard', { params: { type, country } });
         return response.data;
       },
     },
@@ -437,4 +424,3 @@ export const base44 = {
     },
   },
 };
-

@@ -3,7 +3,6 @@ import Layout from "./Layout.jsx";
 import Analytics from "./Analytics";
 import AuditLogs from "./AuditLogs";
 import Dashboard from "./Dashboard";
-import DriverAvailability from "./DriverAvailability";
 import Drivers from "./Drivers";
 import Merchants from "./Merchants";
 import Products from "./Products";
@@ -22,6 +21,7 @@ import Wallets from './Wallets';
 import Transactions from './Transactions';
 import Earnings from './Earnings';
 import Services from './Services';
+import Leaderboard from './Leaderboard';
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
 import Login from "./Login";
@@ -36,7 +36,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'DriverAvailability', 'Drivers', 'Earnings', 'Merchants', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'Drivers', 'Earnings', 'Merchants', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services', 'Leaderboard'];
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }
@@ -78,41 +78,41 @@ function LoginWrapper() {
 
 export default function Pages() {
     return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={<LoginWrapper />} />
-                <Route path="/setup-admin" element={<SetupAdmin />} />
+        <Routes>
+            <Route path="/login" element={<LoginWrapper />} />
+            <Route path="/setup-admin" element={<SetupAdmin />} />
 
-                {/* Protected Routes */}
-                <Route element={<ProtectedLayout />}>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/Analytics" element={<Analytics />} />
-                    <Route path="/AuditLogs" element={<AuditLogs />} />
-                    <Route path="/Dashboard" element={<Dashboard />} />
-                    <Route path="/DriverAvailability" element={<DriverAvailability />} />
-                    <Route path="/Drivers" element={<Drivers />} />
-                    <Route path="/Merchants" element={<Merchants />} />
-                    <Route path="/Products" element={<Products />} />
-                    <Route path="/Notifications" element={<Notifications />} />
-                    <Route path="/Campaigns" element={<Campaigns />} />
-                    <Route path="/Orders" element={<Orders />} />
-                    <Route path="/Riders" element={<Riders />} />
-                    <Route path="/Settings" element={<Settings />} />
-                    <Route path="/finances/wallets" element={<Wallets />} />
-                    <Route path="/finances/transactions" element={<Transactions />} />
-                    <Route path="/earnings" element={<Earnings />} />
-                    <Route path="/fee-structure" element={<FeeStructure />} />
-                    <Route path="/RideSimulator" element={<RideSimulator />} />
-                    <Route path="/SupportTickets" element={<SupportTickets />} />
-                    <Route path="/Zones" element={<Zones />} />
-                    <Route path="/Waitlist" element={<Waitlist />} />
-                    <Route path="/Team" element={<Team />} />
-                    <Route path="/Services" element={<Services />} />
-                </Route>
+            {/* Protected Routes */}
+            <Route element={<ProtectedLayout />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/auditlogs" element={<AuditLogs />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/drivers" element={<Drivers />} />
+                <Route path="/merchants" element={<Merchants />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/campaigns" element={<Campaigns />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/riders" element={<Riders />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/wallets" element={<Wallets />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/finances/wallets" element={<Wallets />} />
+                <Route path="/finances/transactions" element={<Transactions />} />
+                <Route path="/earnings" element={<Earnings />} />
+                <Route path="/fee-structure" element={<FeeStructure />} />
+                <Route path="/ridesimulator" element={<RideSimulator />} />
+                <Route path="/supporttickets" element={<SupportTickets />} />
+                <Route path="/zones" element={<Zones />} />
+                <Route path="/waitlist" element={<Waitlist />} />
+                <Route path="/team" element={<Team />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+            </Route>
 
-                {/* Catch-all redirect */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </Router>
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
     );
 }

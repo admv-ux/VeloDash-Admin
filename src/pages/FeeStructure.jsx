@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { 
   Percent, Save, Loader2, Info, ArrowRight, Truck, Car, ShoppingBag, Globe
 } from 'lucide-react';
+import { getCountryName } from '@/utils/country';
 
 const ProfessionalModelCard = ({ title, icon: Icon, children, description }) => (
   <Card className="mb-6 border-l-4 border-l-primary">
@@ -128,7 +129,7 @@ export default function FeeStructure() {
                     className="bg-transparent border-none focus:ring-0 cursor-pointer text-primary"
                 >
                     {platformSettings.map(s => (
-                        <option key={s.country} value={s.country}>{s.country}</option>
+                        <option key={s.country} value={s.country}>{getCountryName(s.country)}</option>
                     ))}
                 </select>
             </div>
