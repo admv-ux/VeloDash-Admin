@@ -78,10 +78,13 @@ export default function Earnings() {
   });
 
   // Calculate earnings
-  const totalCommissions = orders
-    .filter(o => ['completed', 'delivered'].includes(o.status))
-    .reduce((sum, o) => sum + (Number(o.commission_amount) || 0), 0);
+  const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
+  
+  const gmv = completedOrders.reduce((sum, o) => sum + (Number(o.total_amount) || Number(o.totalAmount) || 0), 0);
+  const platformEarnings = gmv * 0.15;
+  const partnerEarnings = gmv * 0.85;
 
+  const totalCommissions = platformEarnings;
   const totalWithdrawn = withdrawals
     .filter(w => w.status === 'completed')
     .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
@@ -236,42 +239,40 @@ export default function Earnings() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-6 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-0 shadow-lg">
+        <Card className="p-6 bg-gradient-to-br from-indigo-600 to-violet-700 text-white border-0 shadow-lg">
           <div className="flex items-center justify-between mb-3">
-            <Wallet className="w-8 h-8 opacity-80" />
+            <TrendingUp className="w-8 h-8 opacity-80" />
           </div>
-          <p className="text-3xl font-bold mb-1">₵{availableBalance.toFixed(2)}</p>
-          <p className="text-emerald-100 text-sm">Available Balance</p>
+          <p className="text-3xl font-bold mb-1">₵{gmv.toFixed(2)}</p>
+          <p className="text-indigo-100 text-sm font-medium">General Merchandise Value</p>
         </Card>
 
         <Card className="p-6 bg-white border-0 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-violet-100">
-              <DollarSign className="w-5 h-5 text-violet-600" />
+            <div className="p-2 rounded-lg bg-emerald-100">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-slate-900 mb-1">₵{totalCommissions.toFixed(2)}</p>
-          <p className="text-slate-500 text-sm">Total Commissions</p>
-        </Card>
-
-        <Card className="p-6 bg-white border-0 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-amber-100">
-              <TrendingUp className="w-5 h-5 text-amber-600" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 mb-1">₵{thisMonth.toFixed(2)}</p>
-          <p className="text-slate-500 text-sm">This Month</p>
+          <p className="text-2xl font-bold text-slate-900 mb-1">₵{platformEarnings.toFixed(2)}</p>
+          <p className="text-slate-500 text-sm">Platform Earnings (15%)</p>
         </Card>
 
         <Card className="p-6 bg-white border-0 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 rounded-lg bg-blue-100">
-              <Calendar className="w-5 h-5 text-blue-600" />
+              <Wallet className="w-5 h-5 text-blue-600" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-slate-900 mb-1">₵{lastMonth.toFixed(2)}</p>
-          <p className="text-slate-500 text-sm">Last Month</p>
+          <p className="text-2xl font-bold text-slate-900 mb-1">₵{partnerEarnings.toFixed(2)}</p>
+          <p className="text-slate-500 text-sm">Partner Earnings (85%)</p>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-0 shadow-lg">
+          <div className="flex items-center justify-between mb-3">
+            <ArrowDownToLine className="w-8 h-8 opacity-80" />
+          </div>
+          <p className="text-3xl font-bold mb-1">₵{availableBalance.toFixed(2)}</p>
+          <p className="text-emerald-100 text-sm font-medium">Available to Withdraw</p>
         </Card>
       </div>
 
@@ -280,11 +281,19 @@ export default function Earnings() {
         <h3 className="font-semibold text-lg mb-4">Earnings Breakdown</h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-            <span className="text-slate-600">Total Commissions Earned</span>
-            <span className="font-semibold text-slate-900">₵{totalCommissions.toFixed(2)}</span>
+            <span className="text-slate-600">General Merchandise Value (GMV)</span>
+            <span className="font-semibold text-slate-900">₵{gmv.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-            <span className="text-slate-600">Total Withdrawn</span>
+            <span className="text-slate-600">Partner Payouts (85%)</span>
+            <span className="font-semibold text-slate-900">₵{partnerEarnings.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <span className="text-slate-600">Platform Gross Commission (15%)</span>
+            <span className="font-semibold text-emerald-600">₵{platformEarnings.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <span className="text-slate-600">Total Previously Withdrawn</span>
             <span className="font-semibold text-rose-600">-₵{totalWithdrawn.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
@@ -292,7 +301,7 @@ export default function Earnings() {
             <span className="font-semibold text-amber-600">-₵{pendingWithdrawals.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-lg border-2 border-emerald-200">
-            <span className="font-semibold text-emerald-900">Available to Withdraw</span>
+            <span className="font-semibold text-emerald-900">Net Available for Withdrawal</span>
             <span className="font-bold text-2xl text-emerald-600">₵{availableBalance.toFixed(2)}</span>
           </div>
         </div>

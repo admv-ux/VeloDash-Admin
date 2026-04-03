@@ -34,6 +34,7 @@ import {
   Users, 
   Car, 
   Crown,
+  Store,
   Search,
   Filter
 } from 'lucide-react';
@@ -41,7 +42,9 @@ import { toast } from 'sonner';
 
 export default function Leaderboard() {
   const { currentLocation } = useAuth();
-  const [activeTab, setActiveTab] = useState('riders');
+  const [activeTab, setActiveTab] = useState('mobility'); // mobility, commerce, customers
+  const [subType, setSubType] = useState('riders'); // riders vs drivers, merchants vs services
+  const [selectedCountry, setSelectedCountry] = useState(currentLocation.country || 'GH');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showMsgDialog, setShowMsgDialog] = useState(false);
   const [msgTitle, setMsgTitle] = useState('');
@@ -49,9 +52,13 @@ export default function Leaderboard() {
   const [isSending, setIsSending] = useState(false);
 
   const { data: leaderboard = [], isLoading } = useQuery({
-    queryKey: ['leaderboard', activeTab, currentLocation.country],
-    queryFn: () => base44.entities.Leaderboard.get(activeTab, currentLocation.country),
-    enabled: !!currentLocation.country
+    queryKey: ['leaderboard', activeTab, subType, selectedCountry],
+    queryFn: () => {
+      const type = activeTab === 'mobility' ? subType : 
+                   activeTab === 'commerce' ? subType : 'customers';
+      return base44.entities.Leaderboard.get(type, selectedCountry);
+    },
+    enabled: !!selectedCountry
   });
 
   const handleSendMessage = async () => {
@@ -90,32 +97,83 @@ export default function Leaderboard() {
             <Crown className="w-7 h-7 text-amber-500" />
             Leadership Board
           </h2>
-          <p className="text-slate-500">Recognizing top performers in {getCountryName(currentLocation.country)}</p>
+          <p className="text-slate-500">Recognizing top performers in {selectedCountry === 'ALL' ? 'ALL Countries' : getCountryName(selectedCountry)}</p>
         </div>
-        <Badge variant="outline" className="bg-white px-3 py-1 shadow-sm">
-          Country: {getCountryName(currentLocation.country)}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <select 
+            value={selectedCountry} 
+            onChange={(e) => setSelectedCountry(e.target.value)}
+            className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="GH">Ghana</option>
+            <option value="NG">Nigeria</option>
+            <option value="CI">Côte d'Ivoire</option>
+            <option value="ALL">ALL Countries</option>
+          </select>
+          <Badge variant="outline" className="bg-white px-3 py-1 shadow-sm h-9">
+            Country: {selectedCountry === 'ALL' ? 'ALL' : getCountryName(selectedCountry)}
+          </Badge>
+        </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex items-center justify-between gap-4 mb-4">
+      <Tabs value={activeTab} onValueChange={(val) => {
+        setActiveTab(val);
+        if (val === 'mobility') setSubType('riders');
+        if (val === 'commerce') setSubType('merchants');
+      }} className="w-full">
+        <div className="flex items-center justify-between gap-4 mb-6">
           <TabsList className="bg-white p-1 border shadow-sm">
-            <TabsTrigger value="riders" className="flex items-center gap-2 px-6">
+            <TabsTrigger value="mobility" className="flex items-center gap-2 px-6">
               <Car className="w-4 h-4" />
-              Top Power Riders
+              Top Power Drivers/Riders
+            </TabsTrigger>
+            <TabsTrigger value="commerce" className="flex items-center gap-2 px-6">
+              <Store className="w-4 h-4" />
+              Top Power Merchants/Service Providers
             </TabsTrigger>
             <TabsTrigger value="customers" className="flex items-center gap-2 px-6">
               <Users className="w-4 h-4" />
-              Top Power Customers
+              Top Customers
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="riders" className="m-0 focus-visible:ring-0">
+        {activeTab !== 'customers' && (
+          <div className="flex gap-2 mb-6">
+            <Button 
+              variant={subType === (activeTab === 'mobility' ? 'riders' : 'merchants') ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSubType(activeTab === 'mobility' ? 'riders' : 'merchants')}
+              className={subType === (activeTab === 'mobility' ? 'riders' : 'merchants') ? 'bg-violet-600' : 'bg-white'}
+            >
+              {activeTab === 'mobility' ? 'Riders' : 'Merchants'}
+            </Button>
+            <Button 
+              variant={subType === (activeTab === 'mobility' ? 'drivers' : 'services') ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSubType(activeTab === 'mobility' ? 'drivers' : 'services')}
+              className={subType === (activeTab === 'mobility' ? 'drivers' : 'services') ? 'bg-violet-600' : 'bg-white'}
+            >
+              {activeTab === 'mobility' ? 'Drivers' : 'Service Providers'}
+            </Button>
+          </div>
+        )}
+
+        <TabsContent value="mobility" className="m-0 focus-visible:ring-0">
           <LeaderboardTable 
             data={leaderboard} 
             isLoading={isLoading} 
-            type="rides"
+            type={subType === 'riders' ? 'rides' : 'rides-driver'}
+            onMessage={(user) => { setSelectedUser(user); setShowMsgDialog(true); }}
+            getRankIcon={getRankIcon}
+          />
+        </TabsContent>
+
+        <TabsContent value="commerce" className="m-0 focus-visible:ring-0">
+          <LeaderboardTable 
+            data={leaderboard} 
+            isLoading={isLoading} 
+            type="merchants"
             onMessage={(user) => { setSelectedUser(user); setShowMsgDialog(true); }}
             getRankIcon={getRankIcon}
           />
@@ -215,8 +273,12 @@ function LeaderboardTable({ data, isLoading, type, onMessage, getRankIcon }) {
         <TableHeader>
           <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
             <TableHead className="w-[100px]">Rank</TableHead>
-            <TableHead>User</TableHead>
-            <TableHead className="text-center">{type === 'rides' ? 'Total Rides' : 'Total Purchases'}</TableHead>
+            <TableHead>{type === 'merchants' ? 'Merchant' : 'User'}</TableHead>
+            <TableHead className="text-center">
+              {type === 'rides' || type === 'rides-driver' ? 'Total Rides' : 
+               type === 'merchants' ? 'Total Orders' : 'Total Purchases'}
+            </TableHead>
+            {type === 'merchants' && <TableHead className="text-right">Revenue</TableHead>}
             <TableHead className="text-right pr-8">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -246,6 +308,11 @@ function LeaderboardTable({ data, isLoading, type, onMessage, getRankIcon }) {
                   {row.count}
                 </Badge>
               </TableCell>
+              {type === 'merchants' && (
+                <TableCell className="text-right font-semibold text-emerald-600 align-middle">
+                  ₵{(row.revenue || 0).toFixed(2)}
+                </TableCell>
+              )}
               <TableCell className="text-right pr-6 align-middle">
                 <Button 
                   variant="ghost" 

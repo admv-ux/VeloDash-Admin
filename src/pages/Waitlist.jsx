@@ -11,7 +11,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, RefreshCcw, Mail, Phone, MapPin, UserCheck, Plus, Globe } from "lucide-react";
+import { Trash2, RefreshCcw, Mail, Phone, MapPin, UserCheck, Plus, Globe, Edit2, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 export default function Waitlist() {
   const { currentLocation } = useAuth();
@@ -33,7 +34,9 @@ export default function Waitlist() {
     const [loading, setLoading] = useState(true);
     const [loadingCountries, setLoadingCountries] = useState(false);
     const [isAddCountryOpen, setIsAddCountryOpen] = useState(false);
-    const [newCountry, setNewCountry] = useState({ name: '', code: '' });
+    const [isEditCountryOpen, setIsEditCountryOpen] = useState(false);
+    const [editingCountry, setEditingCountry] = useState(null);
+    const [newCountry, setNewCountry] = useState({ name: '', code: '', isActive: false });
     const { toast } = useToast();
 
     const fetchEntries = async () => {
@@ -56,7 +59,7 @@ export default function Waitlist() {
     const fetchCountries = async () => {
         setLoadingCountries(true);
         try {
-            const data = await base44.entities.Waitlist.getCountries();
+            const data = await base44.entities.Waitlist.getCountries(true); // Fetch ALL countries
             setCountries(data);
         } catch (error) {
             console.error("Error fetching countries:", error);
@@ -95,11 +98,68 @@ export default function Waitlist() {
         try {
             const added = await base44.entities.Waitlist.addCountry(newCountry);
             setCountries([...countries, added]);
-            setNewCountry({ name: '', code: '' });
+            setNewCountry({ name: '', code: '', isActive: false });
             setIsAddCountryOpen(false);
             toast({
                 title: "Success",
-                description: `${added.name} added to supported countries.`,
+                description: `${added.name} added to countries list.`,
+            });
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: getErrorMessage(error),
+            });
+        }
+    };
+
+    const handleUpdateCountry = async (e) => {
+        e.preventDefault();
+        if (!editingCountry) return;
+
+        try {
+            const updated = await base44.entities.Waitlist.updateCountry(editingCountry.id, editingCountry);
+            setCountries(countries.map(c => c.id === updated.id ? updated : c));
+            setIsEditCountryOpen(false);
+            setEditingCountry(null);
+            toast({
+                title: "Success",
+                description: `${updated.name} updated successfully.`,
+            });
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: getErrorMessage(error),
+            });
+        }
+    };
+
+    const handleToggleStatus = async (country) => {
+        try {
+            const updated = await base44.entities.Waitlist.updateCountry(country.id, { isActive: !country.isActive });
+            setCountries(countries.map(c => c.id === updated.id ? updated : c));
+            toast({
+                title: country.isActive ? "Moved to Waitlist" : "Moved to Supported",
+                description: `${updated.name} is now ${updated.isActive ? 'Supported' : 'on the Waitlist'}.`,
+            });
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: getErrorMessage(error),
+            });
+        }
+    };
+
+    const handleDeleteCountry = async (id) => {
+        if (!confirm("Are you sure? This will also remove associated waitlist entries if any.")) return;
+        try {
+            await base44.entities.Waitlist.deleteCountry(id);
+            setCountries(countries.filter(c => c.id !== id));
+            toast({
+                title: "Success",
+                description: "Country deleted.",
             });
         } catch (error) {
             toast({
@@ -114,9 +174,9 @@ export default function Waitlist() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Waitlist</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">Waitlist & Countries</h2>
                     <p className="text-muted-foreground">
-                        Manage users waiting for platform availability in their region.
+                        Manage platform availability and interested users worldwide.
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -129,9 +189,9 @@ export default function Waitlist() {
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Add Supported Country</DialogTitle>
+                                <DialogTitle>Add New Country</DialogTitle>
                                 <DialogDescription>
-                                    Add a new country to the waitlist options.
+                                    Register a country for waitlist or immediate support.
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleAddCountry} className="space-y-4 py-4">
@@ -156,13 +216,21 @@ export default function Waitlist() {
                                         maxLength={10}
                                     />
                                 </div>
+                                <div className="flex items-center space-x-2 pt-2">
+                                    <Switch
+                                        id="active"
+                                        checked={newCountry.isActive}
+                                        onCheckedChange={(checked) => setNewCountry({ ...newCountry, isActive: checked })}
+                                    />
+                                    <Label htmlFor="active">Set as Supported (Operational)</Label>
+                                </div>
                                 <DialogFooter>
                                     <Button type="submit">Save Country</Button>
                                 </DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>
-                    <Button onClick={fetchEntries} variant="outline" size="sm" className="gap-2">
+                    <Button onClick={() => { fetchEntries(); fetchCountries(); }} variant="outline" size="sm" className="gap-2">
                         <RefreshCcw className={loading ? "animate-spin" : ""} size={16} />
                         Refresh
                     </Button>
@@ -172,7 +240,7 @@ export default function Waitlist() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
+                        <CardTitle className="text-sm font-medium">Waitlist Entries</CardTitle>
                         <UserCheck className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -182,97 +250,201 @@ export default function Waitlist() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Supported Countries</CardTitle>
-                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <Globe className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                            {countries.length === 0 && !loadingCountries ? (
-                                <span className="text-xs text-muted-foreground">None</span>
-                            ) : (
-                                countries.map(c => (
-                                    <Badge key={c.id} variant="outline" className="text-[10px] py-0">
-                                        {c.name} ({c.code})
-                                    </Badge>
-                                ))
-                            )}
+                        <div className="text-2xl font-bold text-emerald-600">{countries.filter(c => c.isActive).length}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Waitlist Countries</CardTitle>
+                        <Plus className="h-4 w-4 text-amber-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-amber-600">{countries.filter(c => !c.isActive).length}</div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+                {/* Country Management Table */}
+                <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle>Country Management</CardTitle>
+                        <CardDescription>Configure which countries are operational or only for waitlist.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="rounded-md border border-slate-100 overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-slate-50/50">
+                                    <TableRow>
+                                        <TableHead>Country</TableHead>
+                                        <TableHead>Code</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {countries.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">No countries configured.</TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        countries.map((country) => (
+                                            <TableRow key={country.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <TableCell className="font-medium">{country.name}</TableCell>
+                                                <TableCell>{country.code}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={country.isActive}
+                                                            onCheckedChange={() => handleToggleStatus(country)}
+                                                        />
+                                                        <Badge variant={country.isActive ? "success" : "warning"} className="text-[10px]">
+                                                            {country.isActive ? "Supported" : "Waitlist"}
+                                                        </Badge>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                   <div className="flex justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-slate-500"
+                                                            onClick={() => {
+                                                                setEditingCountry(country);
+                                                                setIsEditCountryOpen(true);
+                                                            }}
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-red-500 hover:bg-red-50"
+                                                            onClick={() => handleDeleteCountry(country.id)}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </Button>
+                                                   </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Waitlist Entries Table */}
+                <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle>Waitlist Entries</CardTitle>
+                        <CardDescription>Recent signups from interested users.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="rounded-md border border-slate-100 overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-slate-50/50">
+                                    <TableRow>
+                                        <TableHead>Full Name</TableHead>
+                                        <TableHead>Contact Info</TableHead>
+                                        <TableHead>Country</TableHead>
+                                        <TableHead>Signed Up</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {loading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-24 text-center">Loading entries...</TableCell>
+                                        </TableRow>
+                                    ) : entries.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-24 text-center">No entries found.</TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        entries.map((entry) => (
+                                            <TableRow key={entry.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <TableCell className="font-medium text-slate-900">{entry.fullName}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-1 text-sm">
+                                                        <div className="flex items-center gap-2 text-slate-500">
+                                                            <Mail size={14} />
+                                                            {entry.email}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-slate-500">
+                                                            <Phone size={14} />
+                                                            {entry.phoneNumber}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary" className="gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border-none">
+                                                        <MapPin size={12} />
+                                                        {entry.country?.name || 'Unknown'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-slate-500 text-sm">
+                                                    {new Date(entry.createdAt).toLocaleDateString()}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                        onClick={() => handleDelete(entry.id)}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
-                <CardHeader>
-                    <CardTitle>Waitlist Entries</CardTitle>
-                    <CardDescription>Recent signups from interested users.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border border-slate-100">
-                        <Table>
-                            <TableHeader className="bg-slate-50/50">
-                                <TableRow>
-                                    <TableHead>Full Name</TableHead>
-                                    <TableHead>Contact Info</TableHead>
-                                    <TableHead>Country</TableHead>
-                                    <TableHead>Signed Up</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
-                                            Loading...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : entries.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
-                                            No entries found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    entries.map((entry) => (
-                                        <TableRow key={entry.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <TableCell className="font-medium text-slate-900">{entry.fullName}</TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-1 text-sm">
-                                                    <div className="flex items-center gap-2 text-slate-500">
-                                                        <Mail size={14} />
-                                                        {entry.email}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-slate-500">
-                                                        <Phone size={14} />
-                                                        {entry.phoneNumber}
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary" className="gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border-none">
-                                                    <MapPin size={12} />
-                                                    {entry.country?.name || 'Unknown'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-slate-500 text-sm">
-                                                {new Date(entry.createdAt).toLocaleDateString()}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                    onClick={() => handleDelete(entry.id)}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
+            {/* Edit Country Dialog */}
+            <Dialog open={isEditCountryOpen} onOpenChange={setIsEditCountryOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Country</DialogTitle>
+                        <DialogDescription>Modify country details.</DialogDescription>
+                    </DialogHeader>
+                    {editingCountry && (
+                        <form onSubmit={handleUpdateCountry} className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-name">Country Name</Label>
+                                <Input
+                                    id="edit-name"
+                                    value={editingCountry.name}
+                                    onChange={(e) => setEditingCountry({ ...editingCountry, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-code">Country Code (ISO)</Label>
+                                <Input
+                                    id="edit-code"
+                                    value={editingCountry.code}
+                                    onChange={(e) => setEditingCountry({ ...editingCountry, code: e.target.value.toUpperCase() })}
+                                    required
+                                    maxLength={10}
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit">Update Country</Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

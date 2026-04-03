@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import ProductForm from '@/components/products/ProductForm';
-import { MoreHorizontal, Eye, Pencil, Trash2, Package, Search, PhoneOff } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Trash2, Package, Search, PhoneOff, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -174,9 +174,10 @@ export default function Products() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Product Listings</h2>
-          <p className="text-slate-500">Monitor and moderate all merchant products</p>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => { setSelectedProduct(null); setShowForm(true); }} className="bg-violet-600 hover:bg-violet-700">
+            <Plus className="w-4 h-4 mr-2" /> Add Product
+          </Button>
         </div>
       </div>
 
@@ -199,14 +200,12 @@ export default function Products() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Product Listing</DialogTitle>
+            <DialogTitle>{selectedProduct ? 'Edit Product Listing' : 'Add New Product Listing'}</DialogTitle>
           </DialogHeader>
-          {selectedProduct && (
-            <ProductForm
-              product={selectedProduct}
-              onClose={() => setShowForm(false)}
-            />
-          )}
+          <ProductForm
+            product={selectedProduct}
+            onClose={() => setShowForm(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>

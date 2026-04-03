@@ -20,7 +20,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import MerchantForm from '@/components/merchants/MerchantForm';
-import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban, Trash2, Plus, Star, MapPin, Phone } from 'lucide-react';
+import CategoryManager from '@/components/merchants/CategoryManager';
+import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban, Trash2, Plus, Star, MapPin, Phone, FolderTree } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/AuthContext';
@@ -32,6 +33,7 @@ export default function Merchants() {
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -197,9 +199,14 @@ export default function Merchants() {
           <h2 className="text-2xl font-bold text-slate-900">Merchants</h2>
           <p className="text-slate-500">Manage all merchant accounts and listings</p>
         </div>
-        <Button onClick={() => { setSelectedMerchant(null); setShowForm(true); }} className="bg-violet-600 hover:bg-violet-700">
-          <Plus className="w-4 h-4 mr-2" /> Add Merchant
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowCategories(true)} className="border-slate-200 hover:bg-slate-50">
+            <FolderTree className="w-4 h-4 mr-2" /> Add New category
+          </Button>
+          <Button onClick={() => { setSelectedMerchant(null); setShowForm(true); }} className="bg-violet-600 hover:bg-violet-700">
+            <Plus className="w-4 h-4 mr-2" /> Add Merchant
+          </Button>
+        </div>
       </div>
 
       <Card className="p-6 bg-white border-0 shadow-sm">
@@ -230,6 +237,7 @@ export default function Merchants() {
           <MerchantForm
             merchant={selectedMerchant}
             onClose={() => setShowForm(false)}
+            onManageCategories={() => { setShowForm(false); setShowCategories(true); }}
           />
         </DialogContent>
       </Dialog>
@@ -323,6 +331,11 @@ export default function Merchants() {
           )}
         </DialogContent>
       </Dialog>
+
+      <CategoryManager 
+        open={showCategories} 
+        onOpenChange={setShowCategories} 
+      />
     </div>
   );
 }

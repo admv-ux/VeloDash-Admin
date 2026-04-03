@@ -41,6 +41,7 @@ export default function Team() {
     role: 'support_agent',
     allowedCountries: '',
     allowedCities: '',
+    password: '',
   });
 
   const queryClient = useQueryClient();
@@ -57,13 +58,16 @@ export default function Team() {
     queryFn: () => base44.entities.Waitlist.getCountries(),
   });
 
-  const inviteMutation = useMutation({
+  const staffMutation = useMutation({
     mutationFn: (data) => {
-      return base44.entities.Staff.update(data);
+      if (selectedUser) {
+        return base44.entities.Staff.update(selectedUser.id, data);
+      }
+      return base44.entities.Staff.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('Team member updated');
+      toast.success(selectedUser ? 'Team member updated' : 'Team member created');
       setShowAddDialog(false);
       resetForm();
     },
@@ -80,6 +84,7 @@ export default function Team() {
       role: 'support_agent',
       allowedCountries: '',
       allowedCities: '',
+      password: '',
     });
   };
 
@@ -92,6 +97,7 @@ export default function Team() {
       role: role,
       allowedCountries: user.roles?.[0]?.allowedCountries?.join(', ') || '',
       allowedCities: user.roles?.[0]?.allowedCities?.join(', ') || '',
+      password: '', // Don't show existing password
     });
     setShowAddDialog(true);
   };
@@ -100,15 +106,10 @@ export default function Team() {
     e.preventDefault();
     const payload = {
       ...formData,
-      allowedCountries: formData.allowedCountries.split(',').map(c => c.trim()).filter(Boolean),
-      allowedCities: formData.allowedCities.split(',').map(c => c.trim()).filter(Boolean),
+      allowedCountries: typeof formData.allowedCountries === 'string' ? formData.allowedCountries.split(',').map(c => c.trim()).filter(Boolean) : formData.allowedCountries,
+      allowedCities: typeof formData.allowedCities === 'string' ? formData.allowedCities.split(',').map(c => c.trim()).filter(Boolean) : formData.allowedCities,
     };
-    if (selectedUser) {
-      inviteMutation.mutate({ id: selectedUser.id, ...payload });
-    } else {
-      // Logic for new user invitation
-      toast.info('Invitation logic would go here');
-    }
+    staffMutation.mutate(payload);
   };
 
   const columns = [
@@ -258,6 +259,19 @@ export default function Team() {
               <p className="text-[10px] text-slate-500 italic">E.164 format recommended</p>
             </div>
 
+            {!selectedUser && (
+              <div className="space-y-2">
+                <Label>Initial Password</Label>
+                <Input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required={!selectedUser}
+                  placeholder="Minimum 6 characters"
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Role</Label>
               <Select
@@ -304,8 +318,8 @@ export default function Team() {
               <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-violet-600 hover:bg-violet-700">
-                {selectedUser ? 'Update Permissions' : 'Send Invitation'}
+              <Button type="submit" className="bg-violet-600 hover:bg-violet-700" disabled={staffMutation.isPending}>
+                {staffMutation.isPending ? 'Processing...' : (selectedUser ? 'Update Member' : 'Create Member')}
               </Button>
             </DialogFooter>
           </form>

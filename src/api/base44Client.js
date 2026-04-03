@@ -2,8 +2,8 @@ import axios from 'axios';
 
 //const API_BASE_URL = 'http://localhost:3008/api/v1';
 const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
-const API_KEY = 'your-api-key-here';
-//const API_KEY = 'velo-key-2024';
+ const API_KEY = 'your-api-key-here';
+
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -150,9 +150,19 @@ export const base44 = {
         const response = await client.put(`/admin/zones/${id}`, data);
         return response.data;
       },
+      async patch(id, data) {
+        const response = await client.patch(`/admin/zones/${id}`, data);
+        return response.data;
+      },
       async delete(id) {
         const response = await client.delete(`/admin/zones/${id}`);
         return response.status === 204;
+      },
+    },
+    Surge: {
+      async updateGlobal(data) {
+        const response = await client.post('/admin/surge/global', data);
+        return response.data;
       },
     },
     PlatformSettings: {
@@ -197,8 +207,16 @@ export const base44 = {
         const response = await client.post('/waitlist/countries', data);
         return response.data;
       },
-      async getCountries() {
-        const response = await client.get('/waitlist/countries');
+      async updateCountry(id, data) {
+        const response = await client.patch(`/waitlist/countries/${id}`, data);
+        return response.data;
+      },
+      async deleteCountry(id) {
+        const response = await client.delete(`/waitlist/countries/${id}`);
+        return response.status === 204;
+      },
+      async getCountries(all = false) {
+        const response = await client.get('/waitlist/countries', { params: { all } });
         return response.data;
       }
     },
@@ -207,9 +225,31 @@ export const base44 = {
         const response = await client.get('/admin/staff');
         return response.data;
       },
-      async update(data) {
-        const response = await client.post('/admin/staff/update', data);
+      async create(data) {
+        const response = await client.post('/admin/staff', data);
         return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/staff/${id}`, data);
+        return response.data;
+      },
+    },
+    Category: {
+      async list() {
+        const response = await client.get('/admin/categories');
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/categories', data);
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/categories/${id}`, data);
+        return response.data;
+      },
+      async delete(id) {
+        const response = await client.delete(`/admin/categories/${id}`);
+        return response.status === 204;
       },
     },
     AuditLog: {

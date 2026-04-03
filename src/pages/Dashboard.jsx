@@ -31,6 +31,18 @@ export default function Dashboard() {
   const [surgeMultiplier, setSurgeMultiplier] = useState(1.0);
   const [isUpdatingSurge, setIsUpdatingSurge] = useState(false);
 
+  // Global Surge State (Synced with backend via query)
+  const { data: settings = [], refetch: refetchSettings } = useQuery({
+    queryKey: ['platform-settings'],
+    queryFn: () => base44.entities.Settings.list(),
+  });
+
+  const globalSetting = settings[0] || { isGlobalSurgeActive: false, globalSurgeMultiplier: 1.0 };
+  const globalSurge = {
+    isActive: globalSetting.isGlobalSurgeActive,
+    multiplier: Number(globalSetting.globalSurgeMultiplier)
+  };
+
   const handleAdjustSurge = (zone) => {
     setSelectedZone(zone);
     setSurgeMultiplier(zone.surge_multiplier || 1.0);
@@ -41,7 +53,7 @@ export default function Dashboard() {
     if (!selectedZone) return;
     setIsUpdatingSurge(true);
     try {
-      await base44.entities.Zone.update(selectedZone.id, {
+      await base44.entities.Zone.patch(selectedZone.id, {
         surge_multiplier: Number(surgeMultiplier)
       });
       setIsSurgeDialogOpen(false);
@@ -50,6 +62,30 @@ export default function Dashboard() {
       console.error("Failed to update surge:", error);
     } finally {
       setIsUpdatingSurge(false);
+    }
+  };
+
+  const handleGlobalSurgeToggle = async (isActive) => {
+    try {
+      await base44.entities.Surge.updateGlobal({
+        isActive,
+        multiplier: globalSurge.multiplier
+      });
+      refetchSettings();
+    } catch (error) {
+      console.error("Failed to toggle global surge:", error);
+    }
+  };
+
+  const handleGlobalSurgeMultiplier = async (multiplier) => {
+    try {
+      await base44.entities.Surge.updateGlobal({
+        isActive: globalSurge.isActive,
+        multiplier
+      });
+      refetchSettings();
+    } catch (error) {
+      console.error("Failed to update global surge multiplier:", error);
     }
   };
 
@@ -105,26 +141,12 @@ export default function Dashboard() {
 
   // Calculate stats - ensure all values are numbers
   const totalRevenue = Number(orders?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) || 0);
-  const totalCommission = Number(orders?.reduce((sum, o) => sum + (Number(o.commission_amount) || 0), 0) || 0);
+  const totalCommission = totalRevenue * 0.15;
   const activeOrders = orders?.filter(o => o?.status && ['pending', 'accepted', 'in_transit', 'preparing', 'picked_up'].includes(o.status)).length || 0;
   const openTickets = tickets?.filter(t => t?.status && ['open', 'in_progress'].includes(t.status)).length || 0;
 
   // Calculate commission breakdowns
   const today = new Date();
-  const dailyCommission = orders?.filter(o => {
-    const orderDate = new Date(o.created_date);
-    return format(orderDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-  }).reduce((sum, o) => sum + (Number(o.commission_amount) || 0), 0) || 0;
-
-  const weeklyCommission = orders?.filter(o => {
-    const orderDate = new Date(o.created_date);
-    return orderDate >= startOfWeek(today) && orderDate <= endOfWeek(today);
-  }).reduce((sum, o) => sum + (Number(o.commission_amount) || 0), 0) || 0;
-
-  const monthlyCommission = orders?.filter(o => {
-    const orderDate = new Date(o.created_date);
-    return orderDate >= startOfMonth(today) && orderDate <= endOfMonth(today);
-  }).reduce((sum, o) => sum + (Number(o.commission_amount) || 0), 0) || 0;
 
   // Calculate revenue breakdowns
   const dailyRevenue = orders?.filter(o => {
@@ -141,6 +163,11 @@ export default function Dashboard() {
     const orderDate = new Date(o.created_date);
     return orderDate >= startOfMonth(today) && orderDate <= endOfMonth(today);
   }).reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) || 0;
+
+  // Calculate commission breakdowns
+  const dailyCommission = dailyRevenue * 0.15;
+  const weeklyCommission = weeklyRevenue * 0.15;
+  const monthlyCommission = monthlyRevenue * 0.15;
 
   if (isLoading) {
     return (
@@ -254,7 +281,13 @@ export default function Dashboard() {
             />
           </div>
           <div>
-            <SurgeOverview zones={zones} onAdjust={handleAdjustSurge} />
+            <SurgeOverview 
+              zones={zones} 
+              globalSurge={globalSurge}
+              onAdjust={handleAdjustSurge}
+              onGlobalToggle={handleGlobalSurgeToggle}
+              onGlobalMultiplierChange={handleGlobalSurgeMultiplier}
+            />
           </div>
         </div>
 

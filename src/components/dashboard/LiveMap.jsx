@@ -114,20 +114,35 @@ export default function LiveMap({ drivers, merchants, orders, zones = [], onAdju
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            {/* Demand Heatmap (Simulated with large transparent circles) */}
-            {filters.heatmap && orders?.filter(o => o.dropoff_latitude).map((order, idx) => (
-              <CircleMarker
-                key={`heat-${idx}`}
-                center={[order.dropoff_latitude, order.dropoff_longitude]}
-                radius={25}
-                fillColor="#f43f5e"
-                fillOpacity={0.15}
-                stroke={false}
-                eventHandlers={{
-                  click: handleHeatmapClick
-                }}
-              />
-            ))}
+            {/* Demand Heatmap - Using real Zone data */}
+            {filters.heatmap && zones?.filter(z => z.latitude && z.longitude).map((zone, idx) => {
+              const demandColor = zone.demandLevel > 80 ? "#ef4444" : 
+                                 zone.demandLevel > 50 ? "#f97316" : 
+                                 "#10b981";
+              return (
+                <CircleMarker
+                  key={`zone-heat-${zone.id || idx}`}
+                  center={[zone.latitude, zone.longitude]}
+                  radius={zone.radius_km * 5} // Scale for visibility
+                  fillColor={demandColor}
+                  fillOpacity={0.25}
+                  stroke={true}
+                  weight={1}
+                  color={demandColor}
+                  eventHandlers={{
+                    click: () => onAdjustSurge?.(zone)
+                  }}
+                >
+                  <Popup>
+                    <div className="text-sm">
+                      <p className="font-bold">{zone.name}</p>
+                      <p className="text-slate-500">Demand: {zone.demandLevel}%</p>
+                      <p className="text-slate-500">Surge: {zone.surge_multiplier}x</p>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
 
             {/* Merchants */}
             {filters.merchants && merchants?.filter(m => m?.status === 'verified' && m.latitude && m.longitude).map((merchant, idx) => (
