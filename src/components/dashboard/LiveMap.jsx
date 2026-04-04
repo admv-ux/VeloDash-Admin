@@ -1,21 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
 import { Car, Store, MapPin, Map as MapIcon, Layers, Package } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/AuthContext';
 import 'leaflet/dist/leaflet.css';
 
-const CITIES = {
-  Accra: [5.6037, -0.1870],
-  Kumasi: [6.6666, -1.6163],
-  Tema: [5.6667, -0.0167],
-  Takoradi: [4.8917, -1.7514],
+const COUNTRY_CITIES = {
+  Ghana: {
+    Accra: [5.6037, -0.1870],
+    Kumasi: [6.6666, -1.6163],
+    Tema: [5.6667, -0.0167],
+    Takoradi: [4.8917, -1.7514],
+  },
+  Nigeria: {
+    Lagos: [6.5244, 3.3792],
+    Abuja: [9.0765, 7.3986],
+    "Port Harcourt": [4.8156, 7.0498],
+  },
+  "South Africa": {
+    Johannesburg: [-26.2041, 28.0473],
+    "Cape Town": [-33.9249, 18.4241],
+    Pretoria: [-25.7479, 28.2293],
+  },
+  "CHINA": {
+    Shanghai: [31.2304, 121.4737],
+    Beijing: [39.9042, 116.4074],
+    Guangzhou: [23.1291, 113.2644],
+  },
+  "Togo": {
+    "Lomé": [6.1375, 1.2125],
+    "Lome": [6.1375, 1.2125],
+  }
+};
+
+const ALL_CITIES = {
+  ...COUNTRY_CITIES.Ghana,
+  ...COUNTRY_CITIES.Nigeria,
+  ...COUNTRY_CITIES["South Africa"],
+  ...COUNTRY_CITIES["CHINA"],
+  ...COUNTRY_CITIES["Togo"],
 };
 
 export default function LiveMap({ drivers, merchants, orders, zones = [], onAdjustSurge }) {
-  const [selectedCity, setSelectedCity] = useState('Accra');
+  const { currentLocation, setLocationScope } = useAuth();
+  const [selectedCity, setSelectedCity] = useState(currentLocation.city === 'All' ? 'Accra' : currentLocation.city);
   const [filters, setFilters] = useState({
     drivers: true,
     merchants: true,
@@ -23,14 +54,38 @@ export default function LiveMap({ drivers, merchants, orders, zones = [], onAdju
     heatmap: false,
   });
 
-  const center = CITIES[selectedCity] || CITIES.Accra;
+  // Sync with global location scope
+  useEffect(() => {
+    if (currentLocation.city !== 'All') {
+      setSelectedCity(currentLocation.city);
+    } else if (currentLocation.country !== 'All') {
+      // Default to first city in country if country is selected but city is "All"
+      const currentCountryName = currentLocation.country;
+      const citiesInCountry = Object.keys(COUNTRY_CITIES[currentCountryName] || {});
+      if (citiesInCountry.length > 0) {
+        setSelectedCity(citiesInCountry[0]);
+      }
+    }
+  }, [currentLocation]);
+
+  const handleCityChange = (city) => {
+    setSelectedCity(city);
+    setLocationScope({ city });
+  };
+
+  const currentCities = currentLocation.country === 'All' 
+    ? ALL_CITIES 
+    : (COUNTRY_CITIES[currentLocation.country] || {});
+
+  const effectiveCity = currentCities[selectedCity] ? selectedCity : (Object.keys(currentCities)[0] || 'Accra');
+  const center = currentCities[effectiveCity] || [5.6037, -0.1870];
 
   const toggleFilter = (key) => {
     setFilters(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleHeatmapClick = () => {
-    const zone = zones.find(z => z.city === selectedCity || z.name.includes(selectedCity));
+    const zone = zones.find(z => z.city === effectiveCity || z.name.includes(effectiveCity));
     if (zone) {
       onAdjustSurge?.(zone);
     }
@@ -49,14 +104,17 @@ export default function LiveMap({ drivers, merchants, orders, zones = [], onAdju
           </div>
           
           <div className="flex items-center gap-3">
-            <Select value={selectedCity} onValueChange={setSelectedCity}>
+            <Select value={effectiveCity} onValueChange={handleCityChange}>
               <SelectTrigger className="w-[140px] h-9 text-sm">
                 <SelectValue placeholder="Select City" />
               </SelectTrigger>
               <SelectContent className="z-[1001]">
-                {Object.keys(CITIES).map(city => (
+                {Object.keys(currentCities).map(city => (
                   <SelectItem key={city} value={city}>{city}</SelectItem>
                 ))}
+                {Object.keys(currentCities).length === 0 && (
+                  <SelectItem value="All" disabled>No cities defined</SelectItem>
+                )}
               </SelectContent>
             </Select>
 

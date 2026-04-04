@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Clock,
   ExternalLink,
-  Plus
+  Plus,
+  FolderTree
 } from 'lucide-react';
 import { base44, getErrorMessage } from '@/api/base44Client';
 import { getCountryName } from '@/utils/country';
@@ -27,6 +28,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import StatCard from '@/components/dashboard/StatCard';
 import ProductForm from '@/components/products/ProductForm';
+import ProductCategoryManager from '@/components/products/ProductCategoryManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +40,7 @@ export default function Services() {
   const [showForm, setShowForm] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   const handleStatClick = (title, breakdown) => {
     setDetailData({ title, breakdown });
@@ -131,6 +134,13 @@ export default function Services() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <Button 
+                variant="outline" 
+                onClick={() => setShowCategoryManager(true)}
+                className="h-9 border-slate-200 hover:bg-slate-50"
+            >
+              <FolderTree className="w-4 h-4 mr-2" /> Categories
+            </Button>
             <Button variant="outline" size="icon" className="h-9 w-9">
               <Filter className="w-4 h-4" />
             </Button>
@@ -360,6 +370,12 @@ export default function Services() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ProductCategoryManager 
+        open={showCategoryManager} 
+        onOpenChange={setShowCategoryManager} 
+        defaultType="service"
+      />
     </div>
   );
 }

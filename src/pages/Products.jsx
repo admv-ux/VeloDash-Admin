@@ -19,7 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import ProductForm from '@/components/products/ProductForm';
-import { MoreHorizontal, Eye, Pencil, Trash2, Package, Search, PhoneOff, Plus } from 'lucide-react';
+import ProductCategoryManager from '@/components/products/ProductCategoryManager';
+import { MoreHorizontal, Eye, Pencil, Trash2, Package, Search, PhoneOff, Plus, FolderTree } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -28,6 +29,7 @@ export default function Products() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -91,7 +93,7 @@ export default function Products() {
       header: 'Price',
       cell: (row) => (
         <span className="font-medium text-slate-900">
-          ₵{(row.price || 0).toFixed(2)}
+          ₵{Number(row.price || 0).toFixed(2)}
         </span>
       ),
     },
@@ -161,20 +163,27 @@ export default function Products() {
     },
   ];
 
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ['product-categories', 'product'],
+    queryFn: () => base44.entities.ProductCategory.list('product'),
+  });
+
   const categoryOptions = [
     { value: 'all', label: 'All Categories' },
-    { value: 'food', label: 'Food' },
-    { value: 'grocery', label: 'Grocery' },
-    { value: 'pharmacy', label: 'Pharmacy' },
-    { value: 'marketplace', label: 'Marketplace' },
-    { value: 'rentals', label: 'Rentals' },
-    { value: 'services', label: 'Services' },
+    ...dbCategories.map(cat => ({ value: cat.slug, label: cat.name }))
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowCategoryManager(true)}
+            className="border-slate-200 hover:bg-slate-50"
+          >
+            <FolderTree className="w-4 h-4 mr-2" /> Categories
+          </Button>
           <Button onClick={() => { setSelectedProduct(null); setShowForm(true); }} className="bg-violet-600 hover:bg-violet-700">
             <Plus className="w-4 h-4 mr-2" /> Add Product
           </Button>
@@ -208,6 +217,12 @@ export default function Products() {
           />
         </DialogContent>
       </Dialog>
+
+      <ProductCategoryManager 
+        open={showCategoryManager} 
+        onOpenChange={setShowCategoryManager} 
+        defaultType="product"
+      />
     </div>
   );
 }

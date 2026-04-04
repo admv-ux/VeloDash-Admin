@@ -644,7 +644,7 @@ export default function Orders() {
                       <div className="text-right">
                         <div className="flex items-center gap-1 text-sm justify-end">
                           <Star className="w-3 h-3 text-amber-500" />
-                          <span>{driver.rating?.toFixed(1) || '0.0'}</span>
+                          <span>{Number(driver.rating || 0).toFixed(1)}</span>
                         </div>
                         <p className="text-xs text-slate-400">{driver.total_trips || 0} trips</p>
                       </div>

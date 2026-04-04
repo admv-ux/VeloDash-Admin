@@ -218,7 +218,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Today's Gross Revenue"
-          value={`$${(dashboard?.today?.orderRevenue || 0 + (dashboard?.today?.rideRevenue || 0)).toFixed(2)}`}
+          value={`₵${((dashboard?.today?.orderRevenue || 0) + (dashboard?.today?.rideRevenue || 0)).toFixed(2)}`}
           change="+22%"
           changeType="positive"
           icon={DollarSign}

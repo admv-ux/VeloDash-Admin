@@ -130,7 +130,7 @@ export default function Drivers() {
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-sm">
             <Star className="w-3 h-3 text-amber-500" />
-            <span>{row.rating?.toFixed(1) || '0.0'}</span>
+            <span>{Number(row.rating || 0).toFixed(1)}</span>
           </div>
           <p className="text-xs text-slate-500">{row.total_trips || 0} trips</p>
         </div>
@@ -140,7 +140,7 @@ export default function Drivers() {
       header: 'Earnings',
       cell: (row) => (
         <span className="font-medium text-slate-900">
-          ₵{(row.total_earnings || 0).toFixed(2)}
+          ₵{Number(row.total_earnings || 0).toFixed(2)}
         </span>
       ),
     },
@@ -300,7 +300,7 @@ export default function Drivers() {
                   </div>
                   <div className="p-4 bg-slate-50 rounded-xl">
                     <p className="text-sm text-slate-500">Wallet Balance</p>
-                    <p className="font-medium">₵{(selectedDriver.wallet_balance || 0).toFixed(2)}</p>
+                    <p className="font-medium">₵{Number(selectedDriver.wallet_balance || 0).toFixed(2)}</p>
                   </div>
                 </div>
 
@@ -310,11 +310,11 @@ export default function Drivers() {
                     <p className="text-sm text-slate-500">Total Trips</p>
                   </div>
                   <div className="text-center p-4 bg-violet-50 rounded-xl">
-                    <p className="text-2xl font-bold text-violet-600">₵{(selectedDriver.total_earnings || 0).toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-violet-600">₵{Number(selectedDriver.total_earnings || 0).toFixed(2)}</p>
                     <p className="text-sm text-slate-500">Earnings</p>
                   </div>
                   <div className="text-center p-4 bg-amber-50 rounded-xl">
-                    <p className="text-2xl font-bold text-amber-600">{selectedDriver.rating?.toFixed(1) || '0.0'}</p>
+                    <p className="text-2xl font-bold text-amber-600">{Number(selectedDriver.rating || 0).toFixed(1)}</p>
                     <p className="text-sm text-slate-500">Rating</p>
                   </div>
                 </div>

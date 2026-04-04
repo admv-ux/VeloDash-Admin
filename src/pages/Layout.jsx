@@ -37,12 +37,15 @@ import {
   Tags,
   Briefcase,
   Megaphone,
-  Crown
+  Crown,
+  Search,
+  Globe,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/AuthContext';
 import { useQuery } from '@tanstack/react-query';
-import { Globe } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -100,7 +103,12 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const LocationSwitcher = () => {
+    const [countrySearch, setCountrySearch] = useState('');
     if (!isSuperAdmin) return null;
+
+    const filteredCountries = countries.filter(c => 
+      c.name.toLowerCase().includes(countrySearch.toLowerCase())
+    );
 
     return (
       <DropdownMenu>
@@ -111,19 +119,45 @@ export default function Layout({ children, currentPageName }) {
             <ChevronDown className="w-4 h-4 text-slate-400" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => setLocationScope({ country: 'All', city: 'All' })}>
-            All Markets
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {countries.map((country) => (
+        <DropdownMenuContent align="end" className="w-64 p-2">
+          <div className="flex items-center gap-2 px-2 pb-2 border-b mb-1">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <Input 
+              placeholder="Search markets..." 
+              className="h-8 text-xs border-0 focus-visible:ring-0 px-0" 
+              value={countrySearch}
+              onChange={(e) => setCountrySearch(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <ScrollArea className="h-[300px]">
             <DropdownMenuItem 
-              key={country.id} 
-              onClick={() => setLocationScope({ country: country.name, city: 'All' })}
+              onClick={() => {
+                setLocationScope({ country: 'All', city: 'All' });
+                setCountrySearch('');
+              }}
+              className="mt-1"
             >
-              {country.name}
+              All Markets
             </DropdownMenuItem>
-          ))}
+            <DropdownMenuSeparator />
+            {filteredCountries.map((country) => (
+              <DropdownMenuItem 
+                key={country.id} 
+                onClick={() => {
+                  setLocationScope({ country: country.name, city: 'All' });
+                  setCountrySearch('');
+                }}
+              >
+                {country.name}
+              </DropdownMenuItem>
+            ))}
+            {filteredCountries.length === 0 && (
+              <div className="py-4 text-center text-xs text-slate-500">
+                No markets found
+              </div>
+            )}
+          </ScrollArea>
         </DropdownMenuContent>
       </DropdownMenu>
     );

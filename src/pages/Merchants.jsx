@@ -115,7 +115,7 @@ export default function Merchants() {
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-sm">
             <Star className="w-3 h-3 text-amber-500" />
-            <span>{row.rating?.toFixed(1) || '0.0'}</span>
+            <span>{Number(row.rating || 0).toFixed(1)}</span>
           </div>
           <p className="text-xs text-slate-500">{row.total_orders || 0} orders</p>
         </div>
@@ -125,7 +125,7 @@ export default function Merchants() {
       header: 'Revenue',
       cell: (row) => (
         <span className="font-medium text-slate-900">
-          ₵{(row.total_revenue || 0).toFixed(2)}
+          ₵{Number(row.total_revenue || 0).toFixed(2)}
         </span>
       ),
     },
@@ -305,11 +305,11 @@ export default function Merchants() {
                   <p className="text-sm text-slate-500">Total Orders</p>
                 </div>
                 <div className="text-center p-4 bg-emerald-50 rounded-xl">
-                  <p className="text-2xl font-bold text-emerald-600">₵{(selectedMerchant.total_revenue || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-emerald-600">₵{Number(selectedMerchant.total_revenue || 0).toFixed(2)}</p>
                   <p className="text-sm text-slate-500">Revenue</p>
                 </div>
                 <div className="text-center p-4 bg-amber-50 rounded-xl">
-                  <p className="text-2xl font-bold text-amber-600">{selectedMerchant.rating?.toFixed(1) || '0.0'}</p>
+                  <p className="text-2xl font-bold text-amber-600">{Number(selectedMerchant.rating || 0).toFixed(1)}</p>
                   <p className="text-sm text-slate-500">Rating</p>
                 </div>
               </div>

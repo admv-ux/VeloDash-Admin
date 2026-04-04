@@ -35,7 +35,6 @@ export default function ProductForm({ product, onClose }) {
     price: product?.price || 0,
     isActive: product?.isActive ?? true,
     images: product?.images || [],
-    serviceDurationMin: product?.serviceDurationMin || 60,
     merchantId: product?.merchantId || '',
   });
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -46,6 +45,11 @@ export default function ProductForm({ product, onClose }) {
   const { data: merchants = [], refetch: refetchMerchants } = useQuery({
     queryKey: ['merchants'],
     queryFn: () => base44.entities.Merchant.list(),
+  });
+
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ['product-categories'],
+    queryFn: () => base44.entities.ProductCategory.list(),
   });
 
   // Mutations
@@ -221,17 +225,10 @@ export default function ProductForm({ product, onClose }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="food">Food & Dining</SelectItem>
-                    <SelectItem value="grocery">Grocery</SelectItem>
-                    <SelectItem value="pharmacy">Pharmacy</SelectItem>
-                    <SelectItem value="electronics">Electronics</SelectItem>
-                    <SelectItem value="fashion">Fashion</SelectItem>
-                    <SelectItem value="home">Home & Garden</SelectItem>
-                    <SelectItem value="services">General Services</SelectItem>
-                    <SelectItem value="cleaning">Cleaning</SelectItem>
-                    <SelectItem value="repair">Repair</SelectItem>
-                    <SelectItem value="wellness">Wellness</SelectItem>
-                    <SelectItem value="custom" className="text-violet-600 font-medium">
+                    {dbCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.slug}>{cat.icon} {cat.name}</SelectItem>
+                    ))}
+                    <SelectItem value="custom" className="text-violet-600 font-medium border-t mt-1">
                       + Create New Category
                     </SelectItem>
                   </SelectContent>
@@ -255,16 +252,6 @@ export default function ProductForm({ product, onClose }) {
                   onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="serviceDurationMin">Duration (Minutes)</Label>
-              <Input
-                id="serviceDurationMin"
-                type="number"
-                value={formData.serviceDurationMin}
-                onChange={(e) => setFormData({ ...formData, serviceDurationMin: parseInt(e.target.value) })}
-              />
             </div>
           </div>
 

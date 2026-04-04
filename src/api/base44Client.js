@@ -2,7 +2,7 @@ import axios from 'axios';
 
 //const API_BASE_URL = 'http://localhost:3008/api/v1';
 const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
- const API_KEY = 'your-api-key-here';
+const API_KEY = 'your-api-key-here';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -125,6 +125,24 @@ export const base44 = {
       async delete(id) {
         const response = await client.delete(`/admin/products/${id}`);
         return response.status === 200;
+      },
+    },
+    ProductCategory: {
+      async list(type) {
+        const response = await client.get('/admin/product-categories', { params: { type } });
+        return response.data;
+      },
+      async create(data) {
+        const response = await client.post('/admin/product-categories', data);
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/product-categories/${id}`, data);
+        return response.data;
+      },
+      async delete(id) {
+        const response = await client.delete(`/admin/product-categories/${id}`);
+        return response.status === 204;
       },
     },
     Order: {

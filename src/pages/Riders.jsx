@@ -145,10 +145,10 @@ export default function Riders() {
       header: 'Spending',
       cell: (row) => (
         <div className="space-y-1">
-          <p className="font-medium text-slate-900">${(row.total_spent || 0).toFixed(2)}</p>
+          <p className="font-medium text-slate-900">₵{Number(row.total_spent || 0).toFixed(2)}</p>
           <div className="flex items-center gap-1 text-sm text-slate-500">
             <Wallet className="w-3 h-3" />
-            ${(row.wallet_balance || 0).toFixed(2)}
+            ₵{Number(row.wallet_balance || 0).toFixed(2)}
           </div>
         </div>
       ),
@@ -289,11 +289,11 @@ export default function Riders() {
                   <p className="text-sm text-slate-500">Rides</p>
                 </div>
                 <div className="text-center p-4 bg-emerald-50 rounded-xl">
-                  <p className="text-2xl font-bold text-emerald-600">${(selectedRider.total_spent || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-emerald-600">₵{Number(selectedRider.total_spent || 0).toFixed(2)}</p>
                   <p className="text-sm text-slate-500">Total Spent</p>
                 </div>
                 <div className="text-center p-4 bg-amber-50 rounded-xl">
-                  <p className="text-2xl font-bold text-amber-600">${(selectedRider.wallet_balance || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-amber-600">₵{Number(selectedRider.wallet_balance || 0).toFixed(2)}</p>
                   <p className="text-sm text-slate-500">Wallet</p>
                 </div>
               </div>
