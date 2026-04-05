@@ -1,8 +1,4 @@
-Below is a **clean documentation of everything you just did** so you can reuse it for future projects or team onboarding. I wrote it like real project documentation. 🚀
-
----
-
-# Velo Admin Deployment & CI/CD Documentation
+# Velo Admin Deployment & CI/CD Documentation (Production Ready)
 
 ## Project
 
@@ -30,6 +26,12 @@ CI/CD System:
 
 ```
 GitHub Actions
+```
+
+Domain:
+
+```
+admin.velocouriersvc.com
 ```
 
 ---
@@ -66,44 +68,19 @@ docker --version
 
 # 2. Clone the Project
 
-Navigate to apps directory:
-
 ```bash
 mkdir -p ~/apps
 cd ~/apps
-```
-
-Clone the repository:
-
-```bash
 git clone git@github.com:velocouriersvc/velo-admin.git
-```
-
-Project structure:
-
-```
-apps
- └── velo-admin
-      └── velo-admin
-           ├── src
-           ├── package.json
-           ├── Dockerfile
-           └── nginx.conf
 ```
 
 ---
 
 # 3. Dockerizing the Frontend
 
-The project uses **Vite**, so the production build folder is:
-
-```
-dist
-```
-
 ### Dockerfile
 
-```
+```dockerfile
 # Stage 1: Build app
 FROM node:20-alpine AS build
 WORKDIR /app
@@ -125,34 +102,20 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ---
 
-# 4. Build Docker Image
-
-Inside project folder:
+# 4. Build & Run Container
 
 ```bash
 cd ~/apps/velo-admin/velo-admin
-```
 
-Build image:
-
-```bash
 docker build -t velo-frontend:latest .
-```
 
----
-
-# 5. Run Docker Container
-
-Run container:
-
-```bash
 docker run -d -p 8080:80 \
 --name velo-frontend \
 --restart=always \
 velo-frontend:latest
 ```
 
-Application URL:
+App (temporary access):
 
 ```
 http://38.242.149.20:8080
@@ -160,99 +123,153 @@ http://38.242.149.20:8080
 
 ---
 
-# 6. Setting up SSH Keys for CI/CD
+# 5. Domain Configuration (DNS)
 
-Generate SSH key:
+Configure DNS using your provider (e.g. Cloudflare, Namecheap):
+
+### Add A Record
+
+```
+Type: A
+Host: admin
+Value: 38.242.149.20
+TTL: Auto
+```
+
+Result:
+
+```
+admin.velocouriersvc.com → 38.242.149.20
+```
+
+---
+
+# 6. Install Nginx Reverse Proxy
 
 ```bash
-ssh-keygen -t ed25519
-```
-
-Public key location:
-
-```
-~/.ssh/id_ed25519.pub
-```
-
-Private key location:
-
-```
-~/.ssh/id_ed25519
+sudo apt install nginx -y
 ```
 
 ---
 
-## Add Public Key to Server
-
-Add the key to authorized keys:
+## Create Config
 
 ```bash
-nano ~/.ssh/authorized_keys
+sudo nano /etc/nginx/sites-available/velo-admin
 ```
 
-Paste:
-
-```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIItRh/FoSZoByd2qfHz9QQW31cAvscgl44S4BwSpdKPY devkojo@velo-prod
-```
-
-Fix permissions:
+If paste fails, use:
 
 ```bash
-chmod 700 ~/.ssh
-chmod 600 ~/.ssh/authorized_keys
+cat << 'EOF' | sudo tee /etc/nginx/sites-available/velo-admin
+server {
+    listen 80;
+    server_name admin.velocouriersvc.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOF
 ```
 
 ---
 
-# 7. Test SSH Authentication
-
-From local machine:
+## Enable Site
 
 ```bash
-ssh devkojo@38.242.149.20
-```
-
-Expected result:
-
-```
-Login without password
+sudo ln -s /etc/nginx/sites-available/velo-admin /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
 ```
 
 ---
 
-# 8. Configure GitHub Secrets
+# 7. Firewall Configuration
 
-Go to:
-
-Repository → **Settings → Secrets and variables → Actions**
-
-Add new secret:
-
-```
-Name: SERVER_SSH_KEY
-Value: (contents of ~/.ssh/id_ed25519)
+```bash
+sudo ufw allow 80
+sudo ufw allow 443
 ```
 
 ---
 
-# 9. CI/CD Pipeline Setup
+# 8. Test Domain (HTTP)
 
-Create workflow folder:
-
-```
-.github/workflows
-```
-
-Create file:
+Open:
 
 ```
-deploy.yml
+http://admin.velocouriersvc.com
+```
+
+Expected:
+✅ Your app loads (via reverse proxy)
+
+---
+
+# 9. Enable HTTPS (SSL)
+
+Install Certbot:
+
+```bash
+sudo apt install certbot python3-certbot-nginx -y
+```
+
+Run:
+
+```bash
+sudo certbot --nginx -d admin.velocouriersvc.com
+```
+
+This will:
+
+* Issue SSL certificate via Let's Encrypt
+* Auto-configure Nginx
+* Redirect HTTP → HTTPS
+* Enable auto-renewal
+
+---
+
+## Verify HTTPS
+
+```
+https://admin.velocouriersvc.com
 ```
 
 ---
 
-## deploy.yml
+## Test Auto Renewal
+
+```bash
+sudo certbot renew --dry-run
+```
+
+---
+
+# 10. Secure Docker Exposure (Recommended)
+
+Limit container to localhost:
+
+```bash
+docker rm -f velo-frontend
+
+docker run -d -p 127.0.0.1:8080:80 \
+--name velo-frontend \
+--restart=always \
+velo-frontend:latest
+```
+
+---
+
+# 11. CI/CD Pipeline
+
+### GitHub Actions → `.github/workflows/deploy.yml`
 
 ```yaml
 name: Deploy Velo Admin
@@ -282,29 +299,7 @@ jobs:
             git pull origin main
             docker build -t velo-frontend:latest .
             docker rm -f velo-frontend || true
-            docker run -d -p 8080:80 --name velo-frontend --restart=always velo-frontend:latest
-```
-
----
-
-# 10. Trigger Deployment
-
-Push code:
-
-```bash
-git add .
-git commit -m "deploy update"
-git push
-```
-
-CI/CD pipeline will automatically:
-
-```
-1. Trigger GitHub Actions
-2. SSH into server
-3. Pull latest code
-4. Rebuild Docker image
-5. Restart container
+            docker run -d -p 127.0.0.1:8080:80 --name velo-frontend --restart=always velo-frontend:latest
 ```
 
 ---
@@ -315,13 +310,10 @@ CI/CD pipeline will automatically:
 Developer Push
       │
       ▼
-GitHub Repository
-      │
-      ▼
 GitHub Actions
       │
       ▼
-SSH to VPS
+SSH → VPS
       │
       ▼
 Docker Build
@@ -330,93 +322,55 @@ Docker Build
 Restart Container
       │
       ▼
-Live App
+Live App (HTTPS)
 ```
 
 ---
 
-# Access Application
+# Final Access
 
 ```
-http://38.242.149.20:8080
+https://admin.velocouriersvc.com
+```
+
+---
+
+# Final Architecture
+
+```
+User
+ │
+ ▼
+Domain (DNS)
+ │
+ ▼
+Nginx (80/443 + SSL)
+ │
+ ▼
+Docker Container (localhost:8080)
 ```
 
 ---
 
 # Future Improvements
 
-Recommended production upgrades:
-
-### 1 Reverse Proxy
-
-Use
-Nginx
-
-To allow:
-
-```
-admin.velo.com
-```
-
-instead of IP.
-
----
-
-### 2 HTTPS
-
-Install
-
-Certbot
-
-for SSL certificates.
-
----
-
-### 3 Docker Compose
-
-Use
-
-Docker Compose
-
-to manage:
-
-```
-frontend
-backend
-database
-nginx
-```
-
----
-
-### 4 Faster Deployments
-
-Push images to
-
-Docker Hub
-
-instead of building on the server.
+* Docker Compose (multi-service)
+* Backend API container
+* PostgreSQL
+* Redis
+* Cloudflare CDN & WAF
+* Zero-downtime deployments
+* Monitoring (Grafana + Prometheus)
 
 ---
 
 # Final Result
 
-You now have:
+✅ Domain connected
+✅ HTTPS enabled
+✅ Reverse proxy configured
+✅ Secure container setup
+✅ CI/CD automated
 
-✅ Dockerized frontend
-✅ VPS deployment
-✅ CI/CD pipeline
-✅ Auto redeploy on push
-
----
-
-If you want, I can also create a **much more advanced production architecture** for you:
-
-* domain + SSL
-* backend API container
-* Postgres container
-* Redis
-* Nginx reverse proxy
-* zero-downtime deploys
-
-Basically the **same infrastructure used by SaaS startups**.
+```
+```
