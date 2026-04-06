@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, RefreshCcw, Mail, Phone, MapPin, UserCheck, Plus, Globe, Edit2, CheckCircle2, XCircle } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
     Dialog,
@@ -37,7 +37,6 @@ export default function Waitlist() {
     const [isEditCountryOpen, setIsEditCountryOpen] = useState(false);
     const [editingCountry, setEditingCountry] = useState(null);
     const [newCountry, setNewCountry] = useState({ name: '', code: '', isActive: false });
-    const { toast } = useToast();
 
     const fetchEntries = async () => {
         setLoading(true);
@@ -46,10 +45,8 @@ export default function Waitlist() {
             setEntries(data);
         } catch (error) {
             console.error("Error fetching waitlist:", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: getErrorMessage(error),
+            toast.error("Error fetching waitlist", {
+                description: getErrorMessage(error)
             });
         } finally {
             setLoading(false);
@@ -62,7 +59,7 @@ export default function Waitlist() {
             const data = await base44.entities.Waitlist.getCountries(true); // Fetch ALL countries
             setCountries(data);
         } catch (error) {
-            console.error("Error fetching countries:", error);
+            console.error("Error fetching countries:", error, getErrorMessage(error));
         } finally {
             setLoadingCountries(false);
         }
@@ -78,15 +75,10 @@ export default function Waitlist() {
         try {
             await base44.entities.Waitlist.delete(id);
             setEntries(entries.filter(e => e.id !== id));
-            toast({
-                title: "Success",
-                description: "Entry removed from waitlist.",
-            });
+            toast.success("Entry removed from waitlist.");
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: getErrorMessage(error),
+            toast.error("Failed to remove entry", {
+                description: getErrorMessage(error)
             });
         }
     };
@@ -100,15 +92,10 @@ export default function Waitlist() {
             setCountries([...countries, added]);
             setNewCountry({ name: '', code: '', isActive: false });
             setIsAddCountryOpen(false);
-            toast({
-                title: "Success",
-                description: `${added.name} added to countries list.`,
-            });
+            toast.success(`${added.name} added to countries list.`);
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: getErrorMessage(error),
+            toast.error("Failed to add country", {
+                description: getErrorMessage(error)
             });
         }
     };
@@ -122,15 +109,10 @@ export default function Waitlist() {
             setCountries(countries.map(c => c.id === updated.id ? updated : c));
             setIsEditCountryOpen(false);
             setEditingCountry(null);
-            toast({
-                title: "Success",
-                description: `${updated.name} updated successfully.`,
-            });
+            toast.success(`${updated.name} updated successfully.`);
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: getErrorMessage(error),
+            toast.error("Failed to update country", {
+                description: getErrorMessage(error)
             });
         }
     };
@@ -139,15 +121,12 @@ export default function Waitlist() {
         try {
             const updated = await base44.entities.Waitlist.updateCountry(country.id, { isActive: !country.isActive });
             setCountries(countries.map(c => c.id === updated.id ? updated : c));
-            toast({
-                title: country.isActive ? "Moved to Waitlist" : "Moved to Supported",
-                description: `${updated.name} is now ${updated.isActive ? 'Supported' : 'on the Waitlist'}.`,
+            toast.success(`${updated.name} is now ${updated.isActive ? 'Supported' : 'on the Waitlist'}.`, {
+                description: updated.isActive ? "Operations enabled for this country." : "Operations disabled."
             });
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: getErrorMessage(error),
+            toast.error("Failed to update status", {
+                description: getErrorMessage(error)
             });
         }
     };
@@ -157,15 +136,10 @@ export default function Waitlist() {
         try {
             await base44.entities.Waitlist.deleteCountry(id);
             setCountries(countries.filter(c => c.id !== id));
-            toast({
-                title: "Success",
-                description: "Country deleted.",
-            });
+            toast.success("Country deleted.");
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: getErrorMessage(error),
+            toast.error("Failed to delete country", {
+                description: getErrorMessage(error)
             });
         }
     };

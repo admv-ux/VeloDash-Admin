@@ -5,7 +5,7 @@ import { base44, getErrorMessage } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { ShieldCheck, Phone, Key, ArrowRight, Loader2 } from 'lucide-react';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
@@ -17,7 +17,6 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
-    const { toast } = useToast();
 
     const handleRequestOtp = async (e) => {
         e.preventDefault();
@@ -27,15 +26,12 @@ export default function Login() {
         try {
             await base44.auth.requestOtp(phoneNumber);
             setStep(2);
-            toast({
-                title: "OTP Sent",
-                description: "Please check your backend logs for the code.",
+            toast.success("OTP Sent", {
+                description: "Please check your backend logs for the code."
             });
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Login Failed",
-                description: getErrorMessage(error),
+            toast.error("Login Failed", {
+                description: getErrorMessage(error)
             });
         } finally {
             setLoading(false);
@@ -50,16 +46,13 @@ export default function Login() {
         try {
             await base44.auth.verifyOtp(phoneNumber, otp);
             login(phoneNumber);
-            toast({
-                title: "Welcome Back",
-                description: "Authenticated successfully as Velo Admin.",
+            toast.success("Welcome Back", {
+                description: "Authenticated successfully as Velo Admin."
             });
             navigate('/');
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Authentication Failed",
-                description: getErrorMessage(error),
+            toast.error("Authentication Failed", {
+                description: getErrorMessage(error)
             });
         } finally {
             setLoading(false);
@@ -131,9 +124,8 @@ export default function Login() {
                                     onClick={() => {
                                         login("+233000000000");
                                         navigate("/");
-                                        toast({
-                                            title: "Guest Access",
-                                            description: "Logged in as Guest Admin 1.",
+                                        toast.success("Guest Access", {
+                                            description: "Logged in as Guest Admin 1."
                                         });
                                     }}
                                     className="h-11 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs"
@@ -146,9 +138,8 @@ export default function Login() {
                                     onClick={() => {
                                         login("+233000000001");
                                         navigate("/");
-                                        toast({
-                                            title: "Guest Access",
-                                            description: "Logged in as Guest Admin 2.",
+                                        toast.success("Guest Access", {
+                                            description: "Logged in as Guest Admin 2."
                                         });
                                     }}
                                     className="h-11 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs"
