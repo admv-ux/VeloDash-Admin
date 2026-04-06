@@ -37,7 +37,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'UserManagement', 'Earnings', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services', 'Leaderboard'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'Users', 'Earnings', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services', 'Leaderboard'];
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }

@@ -50,7 +50,7 @@ import { useQuery } from '@tanstack/react-query';
 const navigation = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Leadership Board', href: 'Leaderboard', icon: Crown },
-  { name: 'User Management', href: 'UserManagement', icon: Users },
+  { name: 'User Management', href: 'Users', icon: Users },
   { name: 'Products', href: 'Products', icon: Tags },
   { name: 'Services', href: 'Services', icon: Briefcase },
   { name: 'Orders & Rides', href: 'Orders', icon: Package },
