@@ -208,11 +208,7 @@ export default function Drivers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Drivers</h2>
-          <p className="text-slate-500">Manage all driver accounts and documents</p>
-        </div>
+      <div className="flex items-center justify-end mb-4 gap-2">
         <Button onClick={() => { setSelectedDriver(null); setShowForm(true); }} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-2" /> Add Driver
         </Button>

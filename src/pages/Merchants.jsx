@@ -203,12 +203,7 @@ export default function Merchants() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Merchants</h2>
-          <p className="text-slate-500">Manage all merchant accounts and listings</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-end mb-4 gap-2">
           <Button 
             variant="outline" 
             onClick={() => syncMutation.mutate()} 
@@ -225,8 +220,7 @@ export default function Merchants() {
             <Plus className="w-4 h-4 mr-2" /> Add Merchant
           </Button>
         </div>
-      </div>
-
+ 
       <Card className="p-6 bg-white border-0 shadow-sm">
         <DataTable
           columns={columns}

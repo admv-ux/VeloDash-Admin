@@ -50,10 +50,8 @@ import { useQuery } from '@tanstack/react-query';
 const navigation = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Leadership Board', href: 'Leaderboard', icon: Crown },
-  { name: 'Merchants', href: 'Merchants', icon: Store },
+  { name: 'User Management', href: 'UserManagement', icon: Users },
   { name: 'Products', href: 'Products', icon: Tags },
-  { name: 'Drivers', href: 'Drivers', icon: Car },
-  { name: 'Riders/Buyers', href: 'Riders', icon: Users },
   { name: 'Services', href: 'Services', icon: Briefcase },
   { name: 'Orders & Rides', href: 'Orders', icon: Package },
   {

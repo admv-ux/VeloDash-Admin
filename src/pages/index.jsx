@@ -26,6 +26,7 @@ import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet }
 import { useAuth } from '@/AuthContext';
 import Login from "./Login";
 import SetupAdmin from "./SetupAdmin";
+import UserManagement from "./UserManagement";
 
 function _getCurrentPage(url) {
     if (url.endsWith('/')) {
@@ -36,7 +37,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'Drivers', 'Earnings', 'Merchants', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Riders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services', 'Leaderboard'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'UserManagement', 'Earnings', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services', 'Leaderboard'];
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }
@@ -88,13 +89,14 @@ export default function Pages() {
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/auditlogs" element={<AuditLogs />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/drivers" element={<Drivers />} />
-                <Route path="/merchants" element={<Merchants />} />
+                <Route path="/users" element={<UserManagement />} />
+                <Route path="/drivers" element={<Navigate to="/users" replace />} />
+                <Route path="/merchants" element={<Navigate to="/users" replace />} />
+                <Route path="/riders" element={<Navigate to="/users" replace />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/campaigns" element={<Campaigns />} />
                 <Route path="/orders" element={<Orders />} />
-                <Route path="/riders" element={<Riders />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/wallets" element={<Wallets />} />
                 <Route path="/transactions" element={<Transactions />} />

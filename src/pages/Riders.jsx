@@ -222,13 +222,6 @@ export default function Riders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Riders / Buyers</h2>
-          <p className="text-slate-500">Manage all customer accounts</p>
-        </div>
-      </div>
-
       <Card className="p-6 bg-white border-0 shadow-sm">
         <DataTable
           columns={columns}
