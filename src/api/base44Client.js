@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 //const API_BASE_URL = 'http://localhost:3008/api/v1';
-const API_BASE_URL = 'http://localhost:3008/api/v1';
-const API_KEY = 'your-api-key-here';
+//const API_BASE_URL = 'http://localhost:3008/api/v1';
+const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
 
+const API_KEY = 'your-api-key-here';
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -102,6 +103,10 @@ export const base44 = {
       },
       async update(id, data) {
         const response = await client.patch(`/admin/merchants/${id}`, data);
+        return response.data;
+      },
+      async syncAll() {
+        const response = await client.post("/admin/merchants/sync");
         return response.data;
       },
       async updateProfile(id, data) {

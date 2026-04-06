@@ -21,7 +21,7 @@ import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import MerchantForm from '@/components/merchants/MerchantForm';
 import CategoryManager from '@/components/merchants/CategoryManager';
-import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban, Trash2, Plus, Star, MapPin, Phone, FolderTree } from 'lucide-react';
+import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban, Trash2, Plus, Star, MapPin, Phone, FolderTree, RefreshCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/AuthContext';
@@ -56,6 +56,15 @@ export default function Merchants() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['merchants'] });
       toast.success('Merchant deleted');
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: () => base44.entities.Merchant.syncAll(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['merchants'] });
+      toast.success(`Sync complete! Fixed ${data.fixedRoles} roles, ${data.fixedStats} stats, and ${data.fixedVisibility} visibility issues.`);
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
@@ -200,8 +209,17 @@ export default function Merchants() {
           <p className="text-slate-500">Manage all merchant accounts and listings</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => syncMutation.mutate()} 
+            disabled={syncMutation.isPending}
+            className="border-slate-200 hover:bg-slate-50"
+          >
+            <RefreshCcw className={`w-4 h-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+            Sync Merchants
+          </Button>
           <Button variant="outline" onClick={() => setShowCategories(true)} className="border-slate-200 hover:bg-slate-50">
-            <FolderTree className="w-4 h-4 mr-2" /> Add New category
+            <FolderTree className="w-4 h-4 mr-2" /> Categories
           </Button>
           <Button onClick={() => { setSelectedMerchant(null); setShowForm(true); }} className="bg-violet-600 hover:bg-violet-700">
             <Plus className="w-4 h-4 mr-2" /> Add Merchant
