@@ -123,6 +123,16 @@ export default function Riders() {
       ),
     },
     {
+      header: 'Roles',
+      cell: (row) => (
+        <div className="flex flex-wrap gap-1">
+          {row.roles?.length > 0 ? row.roles.map(role => (
+            <StatusBadge key={role} status={role} />
+          )) : <span className="text-sm text-slate-400">None</span>}
+        </div>
+      ),
+    },
+    {
       header: 'Status',
       cell: (row) => <StatusBadge status={row.status} />,
     },
