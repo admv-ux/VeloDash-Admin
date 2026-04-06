@@ -113,6 +113,10 @@ export const base44 = {
         const response = await client.patch(`/admin/merchants/${id}/profile`, data);
         return response.data;
       },
+      async delete(id) {
+        const response = await client.delete(`/admin/merchants/${id}`);
+        return response.status === 204;
+      },
     },
     Product: {
       async list(params = {}) {
