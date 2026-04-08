@@ -300,6 +300,10 @@ export const base44 = {
         const response = await client.get('/admin/users');
         return response.data;
       },
+      async updateRoles(id, roles) {
+        const response = await client.put(`/admin/users/${id}/roles`, { roles });
+        return response.data;
+      },
     },
     Drivers: {
       async list() {

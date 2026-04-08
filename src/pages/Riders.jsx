@@ -28,6 +28,8 @@ import { MoreHorizontal, Eye, CheckCircle, Ban, Trash2, Package, Car, Wallet, Me
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/AuthContext';
+import RoleAssignmentDialog from '@/components/shared/RoleAssignmentDialog';
+import { ShieldCheck } from 'lucide-react';
 
 export default function Riders() {
   const { currentLocation } = useAuth();
@@ -39,6 +41,7 @@ export default function Riders() {
   const [notifTitle, setNotifTitle] = useState('');
   const [notifBody, setNotifBody] = useState('');
   const [isSendingNotif, setIsSendingNotif] = useState(false);
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -202,6 +205,9 @@ export default function Riders() {
                 <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" /> Reactivate
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem onClick={() => { setSelectedRider(row); setShowRoleDialog(true); }}>
+              <ShieldCheck className="w-4 h-4 mr-2 text-violet-600" /> Assign Roles
+            </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => deleteMutation.mutate(row.id)}
               className="text-rose-600"
@@ -346,6 +352,13 @@ export default function Riders() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Role Assignment Dialog */}
+      <RoleAssignmentDialog 
+        user={selectedRider}
+        open={showRoleDialog}
+        onOpenChange={setShowRoleDialog}
+      />
     </div>
   );
 }

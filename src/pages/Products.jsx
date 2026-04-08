@@ -10,23 +10,98 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import DataTable from '@/components/shared/DataTable';
-import StatusBadge from '@/components/shared/StatusBadge';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import ProductForm from '@/components/products/ProductForm';
 import ProductCategoryManager from '@/components/products/ProductCategoryManager';
-import { MoreHorizontal, Eye, Pencil, Trash2, Package, Search, PhoneOff, Plus, FolderTree } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, Phone, Plus, FolderTree, Package, MoreVertical, Pencil, Trash2, Power } from 'lucide-react';
 import { toast } from 'sonner';
+import '@/styles/ProductCard.css';
+
+const ProductCard = ({ product, categories, onEdit, onDelete, onStatusToggle, onCategoryUpdate }) => {
+  const merchantName = product.merchant?.merchantProfile?.businessName || 'Unknown Merchant';
+  const merchantPhone = product.merchant?.phoneNumber || 'No Contact';
+  
+  return (
+    <div className="product-card">
+      <div className="product-image-container">
+        {product.images?.[0] ? (
+          <img src={product.images[0]} alt={product.name} className="product-image" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
+            <Package className="w-8 h-8" />
+          </div>
+        )}
+      </div>
+      
+      <div className="product-info">
+        <h3 className="product-title">{product.name}</h3>
+        
+        <div className="product-meta">
+          <div className="meta-item">
+            <span className="meta-label">Active Category</span>
+            <span className="meta-value-badge">{product.category || 'Uncategorized'}</span>
+          </div>
+          
+          <div className="meta-item">
+            <span className="meta-label">Listed By</span>
+            <span className="listed-by">{merchantName}</span>
+          </div>
+          
+          <div className="contact-pill">
+            <Phone className="w-3.5 h-3.5" />
+            <span>{merchantPhone}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-4">
+        <div className="category-select-wrapper">
+          <Select 
+            value={product.category} 
+            onValueChange={(value) => onCategoryUpdate(product.id, value)}
+          >
+            <SelectTrigger className="w-full bg-white border-slate-200">
+              <SelectValue placeholder="Select Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat.slug} value={cat.slug}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => onEdit(product)} title="Edit">
+            <Pencil className="w-4 h-4 text-slate-500" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => onStatusToggle(product)} 
+            title={product.isActive ? "Suspend" : "Activate"}
+            className={product.isActive ? "text-amber-500" : "text-emerald-500"}
+          >
+            <Power className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onDelete(product.id)} title="Delete" className="text-rose-500">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function Products() {
   const [searchValue, setSearchValue] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -34,15 +109,28 @@ export default function Products() {
   const queryClient = useQueryClient();
 
   const { data: productsData = { products: [], total: 0 }, isLoading } = useQuery({
-    queryKey: ['products', searchValue, categoryFilter],
+    queryKey: ['products', searchValue],
     queryFn: () => base44.entities.Product.list({
       search: searchValue,
-      category: categoryFilter === 'all' ? undefined : categoryFilter,
       limit: 100
     }),
   });
 
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ['product-categories', 'product'],
+    queryFn: () => base44.entities.ProductCategory.list('product'),
+  });
+
   const products = productsData.products || [];
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...data }) => base44.entities.Product.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Product updated');
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Product.delete(id),
@@ -53,163 +141,101 @@ export default function Products() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
-  const toggleStatusMutation = useMutation({
-    mutationFn: ({ id, isActive }) => base44.entities.Product.update(id, { isActive: !isActive }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Product status updated');
-    },
-    onError: (error) => toast.error(getErrorMessage(error)),
-  });
+  const handleStatusToggle = (product) => {
+    updateMutation.mutate({ id: product.id, isActive: !product.isActive });
+  };
 
-  const columns = [
-    {
-      header: 'Product',
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 rounded-md">
-            <AvatarImage src={row.images?.[0]} />
-            <AvatarFallback className="bg-slate-100 text-slate-600 rounded-md">
-              <Package className="w-5 h-5" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="max-w-[200px]">
-            <p className="font-medium text-slate-900 truncate">{row.name}</p>
-            <p className="text-xs text-slate-500 capitalize">{row.category}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      header: 'Merchant',
-      cell: (row) => (
-        <div className="text-sm">
-          <p className="font-medium text-slate-700">{row.merchant?.merchantProfile?.businessName || 'Unknown'}</p>
-          <p className="text-xs text-slate-500">{row.merchant?.phoneNumber}</p>
-        </div>
-      ),
-    },
-    {
-      header: 'Price',
-      cell: (row) => (
-        <span className="font-medium text-slate-900">
-          ₵{Number(row.price || 0).toFixed(2)}
-        </span>
-      ),
-    },
-    {
-      header: 'Description',
-      cell: (row) => {
-        const hasNumbers = /[0-9]{7,}/.test(row.description || '');
-        return (
-          <div className="max-w-[300px]">
-            <p className={`text-sm line-clamp-2 ${hasNumbers ? 'text-amber-600 bg-amber-50 px-1 rounded' : 'text-slate-600'}`}>
-              {row.description || <span className="italic opacity-50 text-xs">No description</span>}
-            </p>
-            {hasNumbers && (
-              <p className="text-[10px] text-amber-700 mt-1 flex items-center gap-1 font-medium italic">
-                <PhoneOff className="w-3 h-3" /> May contain contact info
-              </p>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      header: 'Status',
-      cell: (row) => (
-        <StatusBadge status={row.isActive ? 'active' : 'suspended'} />
-      ),
-    },
-    {
-      header: 'Created',
-      cell: (row) => (
-        <span className="text-sm text-slate-500 whitespace-nowrap">
-          {format(new Date(row.createdAt), 'MMM d, yyyy')}
-        </span>
-      ),
-    },
-    {
-      header: '',
-      cell: (row) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => { setSelectedProduct(row); setShowForm(true); }}>
-              <Pencil className="w-4 h-4 mr-2" /> Edit Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toggleStatusMutation.mutate(row)}>
-              <div className="flex items-center">
-                {row.isActive ? 'Suspend Listing' : 'Reactivate Listing'}
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => {
-                if(window.confirm('Are you sure you want to delete this listing?')) {
-                  deleteMutation.mutate(row.id);
-                }
-              }}
-              className="text-rose-600"
-            >
-              <Trash2 className="w-4 h-4 mr-2" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ];
-
-  const { data: dbCategories = [] } = useQuery({
-    queryKey: ['product-categories', 'product'],
-    queryFn: () => base44.entities.ProductCategory.list('product'),
-  });
-
-  const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
-    ...dbCategories.map(cat => ({ value: cat.slug, label: cat.name }))
-  ];
+  const handleCategoryUpdate = (id, category) => {
+    updateMutation.mutate({ id, category });
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowCategoryManager(true)}
-            className="border-slate-200 hover:bg-slate-50"
-          >
-            <FolderTree className="w-4 h-4 mr-2" /> Categories
-          </Button>
-          <Button onClick={() => { setSelectedProduct(null); setShowForm(true); }} className="bg-violet-600 hover:bg-violet-700">
-            <Plus className="w-4 h-4 mr-2" /> Add Product
-          </Button>
+    <div className="max-w-[1200px] mx-auto p-8 space-y-8 min-h-screen bg-slate-50/50">
+      {/* Velo Admin Global Header */}
+      <div className="page-header-container">
+        <div className="branding-group">
+          <h1 className="brand-name">Velo Admin</h1>
+          <p className="brand-subtitle">Marketplace Product Categorization</p>
+        </div>
+        
+        <div className="search-container-top">
+          <Search className="search-icon-top" />
+          <input 
+            type="text" 
+            placeholder="Find products or categories..." 
+            className="search-input-top"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
         </div>
       </div>
 
-      <Card className="p-6 bg-white border-0 shadow-sm">
-        <DataTable
-          columns={columns}
-          data={products}
-          isLoading={isLoading}
-          searchValue={searchValue}
-          onSearchChange={setSearchValue}
-          searchPlaceholder="Search products or descriptions..."
-          filterValue={categoryFilter}
-          onFilterChange={setCategoryFilter}
-          filterOptions={categoryOptions}
-          filterPlaceholder="Category"
-          emptyMessage="No products found"
-        />
-      </Card>
+      {/* Main Content Section */}
+      <div className="space-y-6">
+        <div className="flex items-end justify-between border-b border-slate-200 pb-6">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold text-slate-900">Inventory Master List</h2>
+            <p className="text-sm text-slate-500">Manage and organize your catalog</p>
+          </div>
+          
+          <div className="flex items-center gap-4">
+             <div className="items-found-pill">
+              <span className="dot"></span>
+              {products.length} Items Found
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCategoryManager(true)}
+              className="bg-white border-slate-200 h-11"
+            >
+              <FolderTree className="w-4 h-4 mr-2" /> Categories
+            </Button>
+            
+            <Button 
+              onClick={() => { setSelectedProduct(null); setShowForm(true); }} 
+              className="bg-indigo-600 hover:bg-indigo-700 h-11 px-6 shadow-lg shadow-indigo-200"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add Product
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {isLoading ? (
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-32 w-full bg-slate-100 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : products.length > 0 ? (
+            products.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                categories={dbCategories}
+                onEdit={(p) => { setSelectedProduct(p); setShowForm(true); }}
+                onDelete={(id) => {
+                  if(window.confirm('Are you sure?')) deleteMutation.mutate(id);
+                }}
+                onStatusToggle={handleStatusToggle}
+                onCategoryUpdate={handleCategoryUpdate}
+              />
+            ))
+          ) : (
+            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
+              <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900">No products found</h3>
+              <p className="text-slate-500">Try adjusting your search terms</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-white rounded-3xl border-0 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedProduct ? 'Edit Product Listing' : 'Add New Product Listing'}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">{selectedProduct ? 'Edit Product Listing' : 'Add New Product Listing'}</DialogTitle>
           </DialogHeader>
           <ProductForm
             product={selectedProduct}
@@ -226,3 +252,4 @@ export default function Products() {
     </div>
   );
 }
+
