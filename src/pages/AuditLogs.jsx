@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { base44, getErrorMessage } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import DataTable from '@/components/shared/DataTable';
-import { Shield, User, Store, Car, Package, AlertTriangle } from 'lucide-react';
+import { Shield, User, Store, Car, Package, AlertTriangle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 const entityIcons = {
   merchant: Store,
@@ -24,6 +25,8 @@ const riskColors = {
 };
 
 export default function AuditLogs() {
+  const queryClient = useQueryClient();
+  const [isClearing, setIsClearing] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [riskFilter, setRiskFilter] = useState('all');
 
@@ -31,6 +34,23 @@ export default function AuditLogs() {
     queryKey: ['audit-logs'],
     queryFn: () => base44.entities.AuditLog.list('-created_date', 500),
   });
+
+  const handleClearLogs = async () => {
+    if (!window.confirm('Are you sure you want to clear all audit logs? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsClearing(true);
+      await base44.entities.AuditLog.clear();
+      await queryClient.invalidateQueries(['audit-logs']);
+      toast.success('Audit logs cleared successfully');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   const filteredLogs = logs.filter((l) => {
     const matchesSearch = 
@@ -114,6 +134,16 @@ export default function AuditLogs() {
           <h2 className="text-2xl font-bold text-slate-900">Audit Logs</h2>
           <p className="text-slate-500">Track platform activities and detect fraud</p>
         </div>
+        <Button 
+          variant="destructive" 
+          size="sm" 
+          onClick={handleClearLogs}
+          disabled={isClearing || logs.length === 0}
+          className="gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          {isClearing ? 'Clearing...' : 'Clear Logs'}
+        </Button>
       </div>
 
       {/* Risk Summary */}

@@ -284,6 +284,10 @@ export const base44 = {
         const response = await client.get('/admin/audit-logs', { params: { sort, limit } });
         return response.data;
       },
+      async clear() {
+        const response = await client.delete('/admin/audit-logs');
+        return response.status === 204;
+      },
     },
     Simulate: {
       async createRide(data) {
