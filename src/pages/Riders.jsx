@@ -114,7 +114,7 @@ export default function Riders() {
     },
     {
       header: 'Country',
-      cell: (row) => <span className="text-sm text-slate-600 uppercase font-semibold">{getCountryName(row.country || 'GH')}</span>,
+      cell: (row) => <span className="text-sm text-slate-600 uppercase font-semibold">{row.country}</span>,
     },
     {
       header: 'Contact',
