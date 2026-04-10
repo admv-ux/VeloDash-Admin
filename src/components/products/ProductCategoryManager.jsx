@@ -158,6 +158,9 @@ export default function ProductCategoryManager({ open, onOpenChange, defaultType
                     <SelectItem value="product">Physical Products</SelectItem>
                     <SelectItem value="service">Services</SelectItem>
                     <SelectItem value="marketplace">Marketplace Items</SelectItem>
+                    <SelectItem value="food">Food</SelectItem>
+                    <SelectItem value="pharmacy">Pharmacy</SelectItem>
+                    <SelectItem value="grocery">Grocery</SelectItem>
                 </SelectContent>
             </Select>
           </div>
@@ -198,6 +201,9 @@ export default function ProductCategoryManager({ open, onOpenChange, defaultType
                         <SelectItem value="product">Physical Product</SelectItem>
                         <SelectItem value="service">Service</SelectItem>
                         <SelectItem value="marketplace">Marketplace Item</SelectItem>
+                        <SelectItem value="food">Food</SelectItem>
+                        <SelectItem value="pharmacy">Pharmacy</SelectItem>
+                        <SelectItem value="grocery">Grocery</SelectItem>
                     </SelectContent>
                 </Select>
               </div>
