@@ -5,67 +5,183 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { 
-  Percent, Save, Loader2, Info, ArrowRight, Truck, Car, ShoppingBag, Globe
+import {
+  Percent, Save, Loader2, Info, Truck, Car, ShoppingBag, Globe,
+  DollarSign, Clock, Users, Zap, AlertTriangle, Bike, CheckCircle2, Briefcase
 } from 'lucide-react';
 import { getCountryName } from '@/utils/country';
 
-const ProfessionalModelCard = ({ title, icon: Icon, children, description }) => (
-  <Card className="mb-6 border-l-4 border-l-primary">
+/* ─── Reusable Components ──────────────────────────────────────── */
+
+const SectionCard = ({ title, icon: Icon, description, children }) => (
+  <Card className="border-l-4 border-l-violet-500 bg-white shadow-sm">
     <CardHeader className="pb-3">
-      <div className="flex items-center gap-2">
-        <div className="bg-primary/10 p-2 rounded-lg">
-          <Icon className="w-5 h-5 text-primary" />
+      <div className="flex items-center gap-3">
+        <div className="bg-violet-100 p-2 rounded-xl">
+          <Icon className="w-5 h-5 text-violet-600" />
         </div>
         <div>
-          <CardTitle className="text-lg">{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+          <CardTitle className="text-base">{title}</CardTitle>
+          {description && <CardDescription className="text-xs">{description}</CardDescription>}
         </div>
       </div>
     </CardHeader>
-    <CardContent className="space-y-4">
-      {children}
-    </CardContent>
+    <CardContent className="space-y-4">{children}</CardContent>
   </Card>
 );
 
-const FeeInput = ({ label, value, onChange, prefix = "", suffix = "%", disabled }) => (
-  <div className="space-y-2">
-    <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</Label>
+const FieldInput = ({ label, value, onChange, prefix, suffix, hint, type = "number", disabled }) => (
+  <div className="space-y-1.5">
+    <Label className="text-xs font-semibold text-slate-600">{label}</Label>
     <div className="relative">
       {prefix && (
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-          {prefix}
-        </div>
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">{prefix}</div>
       )}
       <Input
-        type="number"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''} font-semibold`}
+        type={type}
+        step="any"
+        value={value ?? ''}
+        onChange={(e) => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}
+        className={`${prefix ? 'pl-10' : ''} ${suffix ? 'pr-10' : ''} rounded-xl border-slate-200 font-medium h-10`}
         disabled={disabled}
       />
       {suffix && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-          {suffix}
-        </div>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">{suffix}</div>
       )}
     </div>
+    {hint && <p className="text-[10px] text-slate-400">{hint}</p>}
   </div>
 );
 
-export default function FeeStructure() {
-  const [selectedCountry, setSelectedCountry] = useState('GH');
-  const [form, setForm] = useState({
-    rideCommissionRate: 20,
-    deliveryTotalCommissionRate: 40,
-    deliveryRidePortionRate: 50,
-    deliveryServicePortionRate: 50,
-    serviceCommissionRate: 15
+const SplitDisplay = ({ leftLabel, leftValue, rightLabel, rightValue, valid }) => (
+  <div className="bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200 space-y-1.5">
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-slate-500">{leftLabel}</span>
+      <span className="font-bold text-violet-600">{leftValue}</span>
+    </div>
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-slate-500">{rightLabel}</span>
+      <span className="font-bold text-emerald-600">{rightValue}</span>
+    </div>
+    {valid !== undefined && (
+      <div className="flex items-center gap-1 pt-1">
+        {valid ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <AlertTriangle className="w-3 h-3 text-amber-500" />}
+        <span className={`text-[10px] ${valid ? 'text-emerald-500' : 'text-amber-500'}`}>
+          {valid ? 'Valid split' : 'Portions should sum to 100%'}
+        </span>
+      </div>
+    )}
+  </div>
+);
+
+/* ─── Vehicle Pricing Section ──────────────────────────────────── */
+
+const VehiclePricingSection = ({ country, currency }) => {
+  const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const { data: pricingList = [], isLoading } = useQuery({
+    queryKey: ['vehicle-pricing', country],
+    queryFn: () => base44.entities.VehiclePricing.list(country),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.VehiclePricing.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle-pricing'] });
+      toast.success('Vehicle pricing updated');
+      setEditingId(null);
+    },
+    onError: (err) => toast.error(`Failed: ${err.message}`),
+  });
+
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({
+      basePrice: Number(item.basePrice),
+      pricePerKm: Number(item.pricePerKm),
+      pricePerMin: Number(item.pricePerMin),
+      minimumFare: Number(item.minimumFare),
+      maxPassengers: Number(item.maxPassengers),
+      isActive: item.isActive,
+    });
+  };
+
+  const vehicleIcons = { bike: Bike, car: Car, suv: Truck, truck: Truck };
+  const vehicleLabels = { bike: 'Motorcycle', car: 'Standard Car', suv: 'SUV / Large', truck: 'Truck' };
+
+  if (isLoading) return <div className="flex items-center gap-2 py-4 text-slate-400"><Loader2 className="w-4 h-4 animate-spin" /> Loading pricing...</div>;
+
+  const filtered = pricingList.filter(p => p.country === country);
+  if (filtered.length === 0) return <p className="text-sm text-slate-400 py-4">No vehicle pricing configured for {getCountryName(country)}.</p>;
+
+  return (
+    <div className="space-y-3">
+      {filtered.map((item) => {
+        const Icon = vehicleIcons[item.vehicleType] || Car;
+        const isEditing = editingId === item.id;
+        return (
+          <Card key={item.id} className="bg-white shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="bg-slate-100 p-1.5 rounded-lg"><Icon className="w-4 h-4 text-slate-600" /></div>
+                  <span className="font-semibold text-sm">{vehicleLabels[item.vehicleType] || item.vehicleType}</span>
+                  <Badge variant={item.isActive ? 'default' : 'secondary'} className="text-[10px]">
+                    {item.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+                {isEditing ? (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                    <Button size="sm" onClick={() => updateMutation.mutate({ id: item.id, data: editForm })} disabled={updateMutation.isPending}>
+                      {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />} Save
+                    </Button>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => startEdit(item)}>Edit</Button>
+                )}
+              </div>
+              {isEditing ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <FieldInput label={`Base (${currency})`} value={editForm.basePrice} onChange={(v) => setEditForm({ ...editForm, basePrice: v })} />
+                  <FieldInput label={`Per Km (${currency})`} value={editForm.pricePerKm} onChange={(v) => setEditForm({ ...editForm, pricePerKm: v })} />
+                  <FieldInput label={`Per Min (${currency})`} value={editForm.pricePerMin} onChange={(v) => setEditForm({ ...editForm, pricePerMin: v })} />
+                  <FieldInput label={`Min Fare (${currency})`} value={editForm.minimumFare} onChange={(v) => setEditForm({ ...editForm, minimumFare: v })} />
+                  <FieldInput label="Max Passengers" value={editForm.maxPassengers} onChange={(v) => setEditForm({ ...editForm, maxPassengers: v })} />
+                  <div className="flex items-center gap-2 pt-5">
+                    <Switch checked={editForm.isActive} onCheckedChange={(v) => setEditForm({ ...editForm, isActive: v })} />
+                    <Label className="text-xs">Active</Label>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div><p className="text-[10px] text-slate-400 uppercase">Base</p><p className="font-semibold text-sm">{currency} {Number(item.basePrice).toFixed(2)}</p></div>
+                  <div><p className="text-[10px] text-slate-400 uppercase">Per Km</p><p className="font-semibold text-sm">{currency} {Number(item.pricePerKm).toFixed(2)}</p></div>
+                  <div><p className="text-[10px] text-slate-400 uppercase">Per Min</p><p className="font-semibold text-sm">{currency} {Number(item.pricePerMin).toFixed(2)}</p></div>
+                  <div><p className="text-[10px] text-slate-400 uppercase">Min Fare</p><p className="font-semibold text-sm">{currency} {Number(item.minimumFare).toFixed(2)}</p></div>
+                  <div><p className="text-[10px] text-slate-400 uppercase">Max Riders</p><p className="font-semibold text-sm">{item.maxPassengers}</p></div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ─── Main Page ──────────────────────────────────────────────────── */
+
+export default function FeeStructure() {
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [form, setForm] = useState({});
+  const [isDirty, setIsDirty] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: platformSettings = [], isLoading } = useQuery({
@@ -74,177 +190,425 @@ export default function FeeStructure() {
   });
 
   useEffect(() => {
-    if (platformSettings.length > 0) {
-      const activeSettings = platformSettings.find(s => s.country === selectedCountry) || platformSettings[0];
-      if (activeSettings) {
-        setSelectedCountry(activeSettings.country);
-        setForm({
-          rideCommissionRate: activeSettings.rideCommissionRate || 20,
-          deliveryTotalCommissionRate: activeSettings.deliveryTotalCommissionRate || 40,
-          deliveryRidePortionRate: activeSettings.deliveryRidePortionRate || 50,
-          deliveryServicePortionRate: activeSettings.deliveryServicePortionRate || 50,
-          serviceCommissionRate: activeSettings.serviceCommissionRate || 15
-        });
-      }
+    if (platformSettings.length > 0 && !selectedCountry) {
+      setSelectedCountry(platformSettings[0].country);
+    }
+  }, [platformSettings]);
+
+  useEffect(() => {
+    if (platformSettings.length > 0 && selectedCountry) {
+      const s = platformSettings.find(s => s.country === selectedCountry);
+      if (s) { setForm({ ...s }); setIsDirty(false); }
     }
   }, [platformSettings, selectedCountry]);
+
+  const updateField = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
+  };
 
   const saveMutation = useMutation({
     mutationFn: (data) => base44.entities.PlatformSettings.update(selectedCountry, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['platform-settings']);
-      toast.success('Fee structure updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['platform-settings'] });
+      toast.success('Platform settings saved successfully');
+      setIsDirty(false);
     },
-    onError: (error) => {
-      toast.error(`Failed to update settings: ${error.message}`);
-    }
+    onError: (error) => toast.error(`Failed to save: ${error.message}`),
   });
 
   const handleSave = () => {
-    saveMutation.mutate(form);
+    const { id, updatedAt, createdAt, ...payload } = form;
+    saveMutation.mutate(payload);
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+        <p className="text-slate-500 font-medium">Loading platform settings...</p>
       </div>
     );
   }
 
+  const currency = form.currency || 'USD';
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between mb-2">
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Fee & Fare Structure</h1>
-          <p className="text-muted-foreground">Manage VeloHUB's professional calculation model across countries.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Platform Settings</h1>
+          <p className="text-sm text-slate-500">Configure fees, commissions, and pricing per country.</p>
         </div>
         <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full text-sm font-medium">
-                <Globe className="w-4 h-4" />
-                <span>Country Scope:</span>
-                <select 
-                    value={selectedCountry} 
-                    onChange={(e) => setSelectedCountry(e.target.value)}
-                    className="bg-transparent border-none focus:ring-0 cursor-pointer text-primary"
-                >
-                    {platformSettings.map(s => (
-                        <option key={s.country} value={s.country}>{getCountryName(s.country)}</option>
-                    ))}
-                </select>
-            </div>
-          <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2">
+          <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+            <Globe className="w-4 h-4 text-violet-500 mr-2" />
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="border-0 bg-transparent text-sm font-semibold focus:ring-0 p-0 pr-8 cursor-pointer"
+            >
+              {platformSettings.map(s => (
+                <option key={s.country} value={s.country}>{getCountryName(s.country)} ({s.currency})</option>
+              ))}
+            </select>
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={saveMutation.isPending || !isDirty}
+            className="bg-violet-600 hover:bg-violet-700 h-10 px-6 rounded-xl shadow-lg shadow-violet-500/20 gap-2"
+          >
             {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Changes
           </Button>
         </div>
       </div>
 
-      <ProfessionalModelCard 
-        title="1. Pure Rides" 
-        icon={Car}
-        description="Standard ride-hailing commission model."
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          <FeeInput 
-            label="Company Commission" 
-            value={form.rideCommissionRate} 
-            onChange={(v) => setForm({...form, rideCommissionRate: v})}
-          />
-          <div className="bg-muted/50 p-4 rounded-lg flex flex-col justify-center border border-dashed">
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-muted-foreground">Company Keeps:</span>
-              <span className="font-bold text-primary">{form.rideCommissionRate}%</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Driver Receives:</span>
-              <span className="font-bold text-green-600">{100 - form.rideCommissionRate}%</span>
-            </div>
-          </div>
+      {/* Status bar */}
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className={`w-2.5 h-2.5 rounded-full ${form.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+        <span className="text-sm font-medium text-slate-700">{getCountryName(selectedCountry)} market is {form.isActive ? 'Active' : 'Inactive'}</span>
+        <div className="ml-auto flex items-center gap-3">
+          {isDirty && (
+            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px]">Unsaved changes</Badge>
+          )}
+          <Switch checked={form.isActive} onCheckedChange={(v) => updateField('isActive', v)} />
         </div>
-      </ProfessionalModelCard>
+      </div>
 
-      <ProfessionalModelCard 
-        title="2. Deliveries" 
-        icon={Truck}
-        description="Comprehensive delivery model with internal revenue splitting."
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
-          <div className="space-y-4">
-            <FeeInput 
-              label="Total Company Take" 
-              value={form.deliveryTotalCommissionRate} 
-              onChange={(v) => setForm({...form, deliveryTotalCommissionRate: v})}
+      {/* Tabs */}
+      <Tabs defaultValue="orders" className="w-full">
+        <TabsList className="bg-slate-100 p-1 rounded-2xl w-full md:w-auto h-auto grid grid-cols-2 md:grid-cols-5 gap-1">
+          <TabsTrigger value="orders" className="gap-1.5 rounded-xl py-2 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <ShoppingBag className="w-3.5 h-3.5" /> Orders
+          </TabsTrigger>
+          <TabsTrigger value="rides" className="gap-1.5 rounded-xl py-2 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Car className="w-3.5 h-3.5" /> Rides
+          </TabsTrigger>
+          <TabsTrigger value="services" className="gap-1.5 rounded-xl py-2 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Briefcase className="w-3.5 h-3.5" /> Services
+          </TabsTrigger>
+          <TabsTrigger value="vehicle-pricing" className="gap-1.5 rounded-xl py-2 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Car className="w-3.5 h-3.5" /> Vehicle Pricing
+          </TabsTrigger>
+          <TabsTrigger value="general" className="gap-1.5 rounded-xl py-2 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Globe className="w-3.5 h-3.5" /> General
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── Orders Tab ───────────────────────────── */}
+        <TabsContent value="orders" className="space-y-4 mt-4">
+          <SectionCard title="Merchant Commission" icon={Percent} description="Platform take from order subtotal.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label="Default Commission Rate"
+                value={form.defaultCommissionRate}
+                onChange={(v) => updateField('defaultCommissionRate', v)}
+                suffix="%"
+                hint="Merchant keeps the remainder"
+              />
+              <SplitDisplay
+                leftLabel="Platform keeps"
+                leftValue={`${form.defaultCommissionRate || 0}%`}
+                rightLabel="Merchant gets"
+                rightValue={`${(100 - (form.defaultCommissionRate || 0)).toFixed(1)}%`}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Customer Service Fee" icon={DollarSign} description="Fee charged to customer on order subtotal.">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FieldInput
+                label="Service Fee Rate"
+                value={form.defaultServiceFeeRate}
+                onChange={(v) => updateField('defaultServiceFeeRate', v)}
+                suffix="%"
+                hint="Applied to subtotal"
+              />
+              <FieldInput
+                label={`Service Fee Cap (${currency})`}
+                value={form.serviceFeeMaxCap}
+                onChange={(v) => updateField('serviceFeeMaxCap', v)}
+                hint="Max fee regardless of subtotal"
+              />
+              <FieldInput
+                label="Pickup Fee Rate"
+                value={form.defaultPickupFeeRate}
+                onChange={(v) => updateField('defaultPickupFeeRate', v)}
+                suffix="%"
+                hint="Charged on pickup orders"
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Small Order Fee" icon={AlertTriangle} description="Extra fee for small orders below threshold.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label={`Small Order Fee (${currency})`}
+                value={form.smallOrderFee}
+                onChange={(v) => updateField('smallOrderFee', v)}
+                hint="Flat fee added to orders below threshold"
+              />
+              <FieldInput
+                label={`Threshold (${currency})`}
+                value={form.smallOrderThreshold}
+                onChange={(v) => updateField('smallOrderThreshold', v)}
+                hint="Orders below this amount get the fee"
+              />
+            </div>
+            <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+              <div className="flex gap-2 items-start text-blue-700">
+                <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                <p className="text-xs">
+                  Orders with subtotal below <strong>{currency} {form.smallOrderThreshold || 0}</strong> will be charged
+                  an extra <strong>{currency} {form.smallOrderFee || 0}</strong> small order fee.
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Delivery Fees" icon={Truck} description="Delivery cost structure and driver payout share.">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FieldInput
+                label={`Base Delivery Fee (${currency})`}
+                value={form.deliveryBaseFee}
+                onChange={(v) => updateField('deliveryBaseFee', v)}
+              />
+              <FieldInput
+                label={`Per KM Fee (${currency})`}
+                value={form.deliveryPerKmFee}
+                onChange={(v) => updateField('deliveryPerKmFee', v)}
+              />
+              <FieldInput
+                label="Driver Delivery Share"
+                value={form.driverDeliveryFeeShare}
+                onChange={(v) => updateField('driverDeliveryFeeShare', v)}
+                suffix="%"
+                hint="Driver gets this % of delivery fee"
+              />
+            </div>
+            <SplitDisplay
+              leftLabel="Platform keeps from delivery"
+              leftValue={`${(100 - (form.driverDeliveryFeeShare || 75)).toFixed(1)}%`}
+              rightLabel="Driver receives from delivery"
+              rightValue={`${form.driverDeliveryFeeShare || 75}%`}
             />
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
-               <div className="flex gap-2 items-start text-blue-700 dark:text-blue-300">
-                 <Info className="w-4 h-4 mt-0.5" />
-                 <p className="text-xs">
-                   This is the total percentage deducted from the Delivery Fare (TDF).
-                   The remaining <span className="font-bold">{100 - form.deliveryTotalCommissionRate}%</span> goes to the Delivery Partner.
-                 </p>
-               </div>
-            </div>
-          </div>
+          </SectionCard>
 
-          <div className="space-y-4">
-            <Label className="text-sm font-bold">Internal Commission Split</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <FeeInput 
-                label="Rides Portion" 
-                value={form.deliveryRidePortionRate} 
-                onChange={(v) => setForm({...form, deliveryRidePortionRate: v})}
-              />
-              <FeeInput 
-                label="Service Portion" 
-                value={form.deliveryServicePortionRate} 
-                onChange={(v) => setForm({...form, deliveryServicePortionRate: v})}
+          <SectionCard title="Minimum Order" icon={ShoppingBag} description="Minimum value for a customer to place an order.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label={`Minimum Order Value (${currency})`}
+                value={form.minimumOrderValue}
+                onChange={(v) => updateField('minimumOrderValue', v)}
+                hint="0 means no minimum"
               />
             </div>
-            <div className="relative pt-4">
-                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-muted-foreground mb-1">
-                    <span>Audit Attribution</span>
-                    <span className={Number(form.deliveryRidePortionRate) + Number(form.deliveryServicePortionRate) === 100 ? 'text-green-600' : 'text-red-500'}>
-                        Total: {Number(form.deliveryRidePortionRate) + Number(form.deliveryServicePortionRate)}%
-                    </span>
-                </div>
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden flex">
-                    <div 
-                        className="h-full bg-primary transition-all duration-500" 
-                        style={{ width: `${(form.deliveryRidePortionRate / (Number(form.deliveryRidePortionRate) + Number(form.deliveryServicePortionRate))) * 100}%` }}
-                    />
-                    <div 
-                        className="h-full bg-blue-500 transition-all duration-500" 
-                        style={{ width: `${(form.deliveryServicePortionRate / (Number(form.deliveryRidePortionRate) + Number(form.deliveryServicePortionRate))) * 100}%` }}
-                    />
-                </div>
-            </div>
-          </div>
-        </div>
-      </ProfessionalModelCard>
+          </SectionCard>
 
-      <ProfessionalModelCard 
-        title="3. Service Providers" 
-        icon={ShoppingBag}
-        description="Marketplace commissions for grocery, food, and other services."
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          <FeeInput 
-            label="Service Commission" 
-            value={form.serviceCommissionRate} 
-            onChange={(v) => setForm({...form, serviceCommissionRate: v})}
-          />
-          <div className="bg-muted/50 p-4 rounded-lg flex flex-col justify-center border border-dashed">
-            <p className="text-xs text-muted-foreground mb-2 italic">
-               * This commission is applied to the subtotal of orders from marketplace merchants.
-            </p>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Platform Earnings (on $100):</span>
-              <span className="font-bold text-primary">${(100 * form.serviceCommissionRate / 100).toFixed(2)}</span>
+          <SectionCard title="Internal Delivery Commission Split" icon={Percent} description="How the delivery commission is attributed internally.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <FieldInput
+                  label="Total Company Take from Delivery"
+                  value={form.deliveryTotalCommissionRate}
+                  onChange={(v) => updateField('deliveryTotalCommissionRate', v)}
+                  suffix="%"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <FieldInput
+                    label="Rides Portion"
+                    value={form.deliveryRidePortionRate}
+                    onChange={(v) => updateField('deliveryRidePortionRate', v)}
+                    suffix="%"
+                  />
+                  <FieldInput
+                    label="Service Portion"
+                    value={form.deliveryServicePortionRate}
+                    onChange={(v) => updateField('deliveryServicePortionRate', v)}
+                    suffix="%"
+                  />
+                </div>
+              </div>
+              <SplitDisplay
+                leftLabel="Rides attribution"
+                leftValue={`${form.deliveryRidePortionRate || 50}%`}
+                rightLabel="Service attribution"
+                rightValue={`${form.deliveryServicePortionRate || 50}%`}
+                valid={Number(form.deliveryRidePortionRate || 0) + Number(form.deliveryServicePortionRate || 0) === 100}
+              />
             </div>
-          </div>
-        </div>
-      </ProfessionalModelCard>
+          </SectionCard>
+        </TabsContent>
+
+        {/* ── Rides Tab ────────────────────────────── */}
+        <TabsContent value="rides" className="space-y-4 mt-4">
+          <SectionCard title="Ride Commission" icon={Car} description="Platform commission on ride fares.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label="Commission Rate"
+                value={form.rideCommissionRate}
+                onChange={(v) => updateField('rideCommissionRate', v)}
+                suffix="%"
+                hint="Deducted from fare before driver payout"
+              />
+              <SplitDisplay
+                leftLabel="Platform commission"
+                leftValue={`${form.rideCommissionRate || 15}%`}
+                rightLabel="Driver receives"
+                rightValue={`${(100 - (form.rideCommissionRate || 15)).toFixed(1)}%`}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Rider Service Fee" icon={DollarSign} description="Flat fee added on top of ride fare (goes to platform).">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label={`Service Fee (${currency})`}
+                value={form.riderServiceFee}
+                onChange={(v) => updateField('riderServiceFee', v)}
+                hint="Added on top of fare — 100% goes to platform"
+              />
+              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                <div className="flex gap-2 items-start text-emerald-700">
+                  <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p className="text-xs">
+                    Rider pays: <strong>Fare + {currency} {form.riderServiceFee || 0}</strong><br />
+                    Driver gets: <strong>{(100 - (form.rideCommissionRate || 15)).toFixed(0)}% of fare only</strong><br />
+                    Platform gets: <strong>{form.rideCommissionRate || 15}% of fare + full service fee</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Surge Pricing" icon={Zap} description="Surge multiplier controls.">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FieldInput
+                label="Max Surge Multiplier"
+                value={form.maxSurgeMultiplier}
+                onChange={(v) => updateField('maxSurgeMultiplier', v)}
+                suffix="×"
+                hint="Cap on dynamic surge pricing"
+              />
+              <FieldInput
+                label="Global Surge Multiplier"
+                value={form.globalSurgeMultiplier}
+                onChange={(v) => updateField('globalSurgeMultiplier', v)}
+                suffix="×"
+                hint="Current forced multiplier (1.0 = no surge)"
+              />
+              <div className="flex items-center gap-3 pt-5">
+                <Switch checked={form.isGlobalSurgeActive} onCheckedChange={(v) => updateField('isGlobalSurgeActive', v)} />
+                <Label className="text-sm">Global Surge Active</Label>
+              </div>
+            </div>
+          </SectionCard>
+        </TabsContent>
+
+        {/* ── Services Tab ─────────────────────────── */}
+        <TabsContent value="services" className="space-y-4 mt-4">
+          <SectionCard title="Service Provider Commission" icon={ShoppingBag} description="Platform commission on service bookings.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label="Service Commission Rate"
+                value={form.serviceCommissionRate}
+                onChange={(v) => updateField('serviceCommissionRate', v)}
+                suffix="%"
+                hint="Platform take on service booking total"
+              />
+              <SplitDisplay
+                leftLabel="Platform keeps"
+                leftValue={`${form.serviceCommissionRate || 15}%`}
+                rightLabel="Provider gets"
+                rightValue={`${(100 - (form.serviceCommissionRate || 15)).toFixed(1)}%`}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Booking & Cancellation Fees" icon={Clock} description="Fees for service bookings and late cancellations.">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <FieldInput
+                label={`Booking Fee (${currency})`}
+                value={form.serviceBookingFee}
+                onChange={(v) => updateField('serviceBookingFee', v)}
+                hint="0 = free to book"
+              />
+              <FieldInput
+                label={`Late Cancel Fee (${currency})`}
+                value={form.lateCancellationFee}
+                onChange={(v) => updateField('lateCancellationFee', v)}
+                hint="Min cancel fee"
+              />
+              <FieldInput
+                label={`Max Cancel Fee (${currency})`}
+                value={form.lateCancellationFeeMax}
+                onChange={(v) => updateField('lateCancellationFeeMax', v)}
+                hint="Upper bound for cancel fee"
+              />
+              <FieldInput
+                label="Cancel Window (minutes)"
+                value={form.cancellationWindowMinutes}
+                onChange={(v) => updateField('cancellationWindowMinutes', v)}
+                hint="Free cancellation before this window"
+              />
+            </div>
+            <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
+              <div className="flex gap-2 items-start text-amber-700">
+                <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                <p className="text-xs">
+                  Cancellations made less than <strong>{form.cancellationWindowMinutes || 60} minutes</strong> before the scheduled service
+                  will be charged between <strong>{currency} {form.lateCancellationFee || 5}</strong> and <strong>{currency} {form.lateCancellationFeeMax || 10}</strong>.
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+        </TabsContent>
+
+        {/* ── Vehicle Pricing Tab ──────────────────── */}
+        <TabsContent value="vehicle-pricing" className="space-y-4 mt-4">
+          <SectionCard title={`Vehicle Pricing — ${getCountryName(selectedCountry)}`} icon={Car} description="Ride fare structure per vehicle type.">
+            <VehiclePricingSection country={selectedCountry} currency={currency} />
+          </SectionCard>
+        </TabsContent>
+
+        {/* ── General Tab ──────────────────────────── */}
+        <TabsContent value="general" className="space-y-4 mt-4">
+          <SectionCard title="Region Info" icon={Globe} description="Country and currency configuration.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-600">Country Code</Label>
+                <Input value={form.country || ''} disabled className="rounded-xl border-slate-200 font-medium h-10 bg-slate-50" />
+              </div>
+              <FieldInput
+                label="Currency Code"
+                value={form.currency}
+                onChange={(v) => updateField('currency', v)}
+                type="text"
+                hint="ISO 4217 (e.g. GHS, NGN, USD)"
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Referral Program" icon={Users} description="Referral bonus configuration.">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label={`Referral Reward (${currency})`}
+                value={form.referralRewardAmount}
+                onChange={(v) => updateField('referralRewardAmount', v)}
+                hint="Amount credited to referrer's wallet"
+              />
+              <FieldInput
+                label="Leaderboard Limit"
+                value={form.leaderboardLimit}
+                onChange={(v) => updateField('leaderboardLimit', v)}
+                hint="Max entries shown on leaderboard"
+              />
+            </div>
+          </SectionCard>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

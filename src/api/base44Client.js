@@ -207,6 +207,17 @@ export const base44 = {
         return response.data;
       },
     },
+    VehiclePricing: {
+      async list(country) {
+        const params = country ? { country } : {};
+        const response = await client.get('/admin/vehicle-pricing', { params });
+        return response.data;
+      },
+      async update(id, data) {
+        const response = await client.patch(`/admin/vehicle-pricing/${id}`, data);
+        return response.data;
+      },
+    },
     PlatformWithdrawal: {
       async list() {
         const response = await client.get('/admin/withdrawals');
@@ -336,6 +347,14 @@ export const base44 = {
         const response = await client.post(`/admin/debit-wallet/${userId}`, data);
         return response.data;
       },
+      async approvePayout(id) {
+        const response = await client.patch(`/admin/payouts/${id}/approve`);
+        return response.data;
+      },
+      async rejectPayout(id, reason = '') {
+        const response = await client.patch(`/admin/payouts/${id}/reject`, { reason });
+        return response.data;
+      },
     },
     Dashboard: {
       async getStats() {
@@ -344,6 +363,10 @@ export const base44 = {
       },
       async getReport(params = {}) {
         const response = await client.get('/admin/revenue-report', { params });
+        return response.data;
+      },
+      async getFinancialOverview(params = {}) {
+        const response = await client.get('/admin/reports/financial-overview', { params });
         return response.data;
       },
     },
