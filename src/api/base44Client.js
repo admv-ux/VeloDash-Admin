@@ -81,6 +81,13 @@ export const base44 = {
         const response = await client.patch(`/admin/drivers/${id}`, data);
         return response.data;
       },
+      async verify(id, action, rejectionReason) {
+        const response = await client.post(`/admin/drivers/${id}/verify`, {
+          action,
+          rejection_reason: rejectionReason,
+        });
+        return response.data;
+      },
       async delete(id) {
         const response = await client.delete(`/admin/drivers/${id}`);
         return response.status === 204;
