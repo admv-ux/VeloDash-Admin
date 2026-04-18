@@ -299,6 +299,16 @@ export default function FeeStructure() {
 
         {/* ── Orders Tab ───────────────────────────── */}
         <TabsContent value="orders" className="space-y-4 mt-4">
+          <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${form.deliveryEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Delivery & Orders</p>
+                <p className="text-xs text-slate-400">{form.deliveryEnabled ? 'Customers can place delivery orders' : 'Delivery is disabled for this country'}</p>
+              </div>
+            </div>
+            <Switch checked={form.deliveryEnabled ?? true} onCheckedChange={(v) => updateField('deliveryEnabled', v)} />
+          </div>
           <SectionCard title="Merchant Commission" icon={Percent} description="Platform take from order subtotal.">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FieldInput
@@ -444,6 +454,16 @@ export default function FeeStructure() {
 
         {/* ── Rides Tab ────────────────────────────── */}
         <TabsContent value="rides" className="space-y-4 mt-4">
+          <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${form.ridesEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Rides Service</p>
+                <p className="text-xs text-slate-400">{form.ridesEnabled ? 'Riders can book rides in this country' : 'Rides are disabled for this country'}</p>
+              </div>
+            </div>
+            <Switch checked={form.ridesEnabled ?? true} onCheckedChange={(v) => updateField('ridesEnabled', v)} />
+          </div>
           <SectionCard title="Ride Commission" icon={Car} description="Platform commission on ride fares.">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FieldInput
