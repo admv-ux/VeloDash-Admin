@@ -262,7 +262,8 @@ export const base44 = {
       },
       async getCountries(all = false) {
         const response = await client.get('/waitlist/countries', { params: { all } });
-        return response.data;
+        const data = response.data;
+        return Array.isArray(data) ? data : (data?.countries || []);
       }
     },
     Staff: {
