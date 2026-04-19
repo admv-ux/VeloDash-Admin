@@ -1,8 +1,8 @@
 import axios from 'axios';
 
+const API_BASE_URL = 'http://localhost:3008/api/v1';
 //const API_BASE_URL = 'http://localhost:3008/api/v1';
-//const API_BASE_URL = 'http://localhost:3008/api/v1';
-const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
+//const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
 
 const API_KEY = 'your-api-key-here';
 const client = axios.create({
@@ -519,6 +519,21 @@ export const base44 = {
     Leaderboard: {
       async get(type, country) {
         const response = await client.get('/admin/leaderboard', { params: { type, country } });
+        return response.data;
+      },
+    },
+    Supabase: {
+      async listTables() {
+        const response = await client.get('/admin/supabase/tables');
+        return response.data;
+      },
+      async getTableData(tableName, params = {}) {
+        const response = await client.get(`/admin/supabase/tables/${tableName}`, { params });
+        return response.data;
+      },
+      async syncRecord(tableName, recordId) {
+        // Placeholder for future migration logic
+        const response = await client.post(`/admin/supabase/tables/${tableName}/${recordId}/sync`);
         return response.data;
       },
     },

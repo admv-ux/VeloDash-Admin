@@ -22,6 +22,8 @@ import Transactions from './Transactions';
 import Earnings from './Earnings';
 import Services from './Services';
 import Leaderboard from './Leaderboard';
+import SupabaseExplorer from './SupabaseExplorer';
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
 import Login from "./Login";
@@ -37,7 +39,8 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'Users', 'Earnings', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services', 'Leaderboard'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'Users', 'Earnings', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'Services', 'Leaderboard', 'SupabaseExplorer'];
+
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
 }
@@ -111,6 +114,8 @@ export default function Pages() {
                 <Route path="/team" element={<Team />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/supabaseexplorer" element={<SupabaseExplorer />} />
+
             </Route>
 
             {/* Catch-all redirect */}

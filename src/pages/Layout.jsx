@@ -40,7 +40,9 @@ import {
   Crown,
   Search,
   Globe,
+  Database,
 } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import NotificationBell from '@/components/notifications/NotificationBell';
@@ -71,7 +73,9 @@ const navigation = [
   { name: 'Settings', href: 'Settings', icon: Settings },
   { name: 'Waitlist', href: 'Waitlist', icon: Globe },
   { name: 'Team', href: 'Team', icon: Users },
+  { name: 'Supabase Explorer', href: 'SupabaseExplorer', icon: Database },
 ];
+
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
