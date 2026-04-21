@@ -35,6 +35,7 @@ export default function SupabaseExplorer() {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [supabaseConfig, setSupabaseConfig] = useState(null);
+    const [supabaseStats, setSupabaseStats] = useState({});
     const limit = 50;
 
     const fetchTables = async () => {
@@ -55,6 +56,15 @@ export default function SupabaseExplorer() {
             setSupabaseConfig(config);
         } catch (error) {
             console.error("Failed to load Supabase config:", error);
+        }
+    };
+
+    const fetchStats = async () => {
+        try {
+            const data = await base44.entities.Supabase.getSupabaseStats();
+            setSupabaseStats(data.stats || {});
+        } catch (error) {
+            console.error("Failed to load Supabase stats:", error);
         }
     };
 
@@ -84,6 +94,7 @@ export default function SupabaseExplorer() {
     useEffect(() => {
         fetchTables();
         fetchConfig();
+        fetchStats();
     }, []);
 
     const filteredTables = tables.filter(t => t.toLowerCase().includes(searchQuery.toLowerCase()));

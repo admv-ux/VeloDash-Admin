@@ -523,6 +523,10 @@ export const base44 = {
       },
     },
     Supabase: {
+      async getSupabaseStats() {
+        const response = await client.get('/admin/supabase/stats');
+        return response.data;
+      },
       async getSupabaseConfig() {
         const response = await client.get('/admin/supabase/config');
         return response.data;
