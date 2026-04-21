@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44, getErrorMessage } from '@/api/base44Client';
+import MigrationManager from '@/components/database/MigrationManager';
 import { 
     Table, 
     TableBody, 
@@ -99,6 +100,7 @@ export default function SupabaseExplorer() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <MigrationManager />
                     <Button onClick={fetchTables} variant="outline" size="sm" className="gap-2">
                         <RefreshCcw className={loadingTables ? "animate-spin" : ""} size={16} />
                         Refresh Schema
