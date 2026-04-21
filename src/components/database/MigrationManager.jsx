@@ -24,6 +24,8 @@ export default function MigrationManager({ triggerButton }) {
         rowsMigrated: 0
     });
     
+    const [clearSecondary, setClearSecondary] = useState(false);
+    
     const streamRef = useRef(null);
     const scrollRef = useRef(null);
 
@@ -43,7 +45,7 @@ export default function MigrationManager({ triggerButton }) {
         
         setStatus('running');
         setLogs([]);
-        addLog('info', 'Starting migration stream connection...');
+        addLog('info', `Starting ${clearSecondary ? 'CLEANUP & ' : ''}migration stream connection...`);
         
         try {
             const token = localStorage.getItem('base44_token') || sessionStorage.getItem('base44_token');
@@ -52,7 +54,7 @@ export default function MigrationManager({ triggerButton }) {
             const cityScope = localStorage.getItem('v_city_scope') || '';
             const apiKey = import.meta.env.VITE_API_KEY || 'your-api-key-here'; 
             
-            const response = await fetch(`${API_BASE_URL}/admin/supabase/migrate/stream`, {
+            const response = await fetch(`${API_BASE_URL}/admin/supabase/migrate/stream?clearSecondary=${clearSecondary}`, {
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
                     'x-api-key': apiKey,
@@ -171,6 +173,28 @@ export default function MigrationManager({ triggerButton }) {
                         This tool connects to your Supabase instance and syncs data to the local DB. 
                         Do not close the browser window while running.
                     </DialogDescription>
+                    
+                    <div className="flex items-center space-x-2 mt-4 p-3 bg-violet-50 rounded-lg border border-violet-100">
+                        <input 
+                            type="checkbox" 
+                            id="clearSecondary" 
+                            checked={clearSecondary} 
+                            onChange={(e) => setClearSecondary(e.target.checked)}
+                            disabled={status === 'running'}
+                            className="w-4 h-4 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                            <label 
+                                htmlFor="clearSecondary" 
+                                className="text-sm font-semibold leading-none cursor-pointer text-violet-900"
+                            >
+                                Clear dynamic data before sync
+                            </label>
+                            <p className="text-[11px] text-violet-600/80">
+                                This will reset products, orders, rides, and wallets while keeping users/merchants/drivers.
+                            </p>
+                        </div>
+                    </div>
                 </DialogHeader>
 
                 <div className="p-6 space-y-6">
