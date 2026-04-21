@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44, getErrorMessage } from '@/api/base44Client';
+import { base44, getErrorMessage, API_BASE_URL } from '@/api/base44Client';
 import MigrationManager from '@/components/database/MigrationManager';
 import { 
     Table, 
@@ -34,6 +34,7 @@ export default function SupabaseExplorer() {
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [supabaseConfig, setSupabaseConfig] = useState(null);
     const limit = 50;
 
     const fetchTables = async () => {
@@ -45,6 +46,15 @@ export default function SupabaseExplorer() {
             toast.error("Failed to load tables", { description: getErrorMessage(error) });
         } finally {
             setLoadingTables(false);
+        }
+    };
+
+    const fetchConfig = async () => {
+        try {
+            const config = await base44.entities.Supabase.getSupabaseConfig();
+            setSupabaseConfig(config);
+        } catch (error) {
+            console.error("Failed to load Supabase config:", error);
         }
     };
 
@@ -73,6 +83,7 @@ export default function SupabaseExplorer() {
 
     useEffect(() => {
         fetchTables();
+        fetchConfig();
     }, []);
 
     const filteredTables = tables.filter(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -107,6 +118,45 @@ export default function SupabaseExplorer() {
                     </Button>
                 </div>
             </div>
+
+            {supabaseConfig && (
+                <Card className="bg-slate-900 border-none shadow-lg text-slate-100 mb-6 font-sans">
+                    <CardHeader className="py-3 px-6 flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                                Supabase Integration Config
+                            </CardTitle>
+                        </div>
+                        <Badge variant="outline" className="bg-slate-800 text-slate-400 border-slate-700 text-[10px]">
+                            {API_BASE_URL}
+                        </Badge>
+                    </CardHeader>
+                    <CardContent className="px-6 pb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
+                                    Project URL
+                                </label>
+                                <p className="text-sm font-mono text-violet-400 break-all">{supabaseConfig.url}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
+                                    Anon Key <span className="text-[9px] lowercase font-normal opacity-50">({supabaseConfig.lengths.anonKey} chars)</span>
+                                </label>
+                                <p className="text-sm font-mono text-slate-300">{supabaseConfig.anonKey}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 text-amber-500">
+                                    Service Role Key <span className="text-[9px] lowercase font-normal opacity-50 text-slate-500">({supabaseConfig.lengths.serviceRoleKey} chars)</span>
+                                </label>
+                                <p className="text-sm font-mono text-amber-500/80">{supabaseConfig.serviceRoleKey}</p>
+                                <p className="text-[9px] text-slate-600 italic mt-1 font-normal">Used for migration to bypass RLS</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {/* Tables Sidebar */}
