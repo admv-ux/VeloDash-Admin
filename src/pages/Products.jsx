@@ -28,12 +28,22 @@ const ProductCard = ({ product, categories, onEdit, onDelete, onStatusToggle, on
   
   return (
     <div className="product-card">
-      <div className="product-image-container">
+      <div className="product-image-container flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-200">
         {product.images?.[0] ? (
-          <img src={product.images[0]} alt={product.name} className="product-image" />
+          <img 
+            src={product.images[0]} 
+            alt={product.name} 
+            className="product-image"
+            onError={(e) => {
+              e.target.onerror = null; 
+              e.target.src = 'https://placehold.co/400x400/f8fafc/6366f1?text=No+Image';
+              e.target.parentElement.classList.add('is-broken');
+            }} 
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
-            <Package className="w-8 h-8" />
+          <div className="flex flex-col items-center justify-center text-slate-400 gap-1">
+            <Package className="w-8 h-8 opacity-40" />
+            <span className="text-[10px] font-bold uppercase tracking-tiresome">N/A</span>
           </div>
         )}
       </div>
@@ -43,16 +53,18 @@ const ProductCard = ({ product, categories, onEdit, onDelete, onStatusToggle, on
         
         <div className="product-meta">
           <div className="meta-item">
-            <span className="meta-label">Active Category</span>
-            <span className="meta-value-badge">{product.category || 'Uncategorized'}</span>
+            <span className="meta-label">Status</span>
+            <span className={`meta-value-badge ${product.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'} border`}>
+              {product.isActive ? 'Active' : 'Suspended'}
+            </span>
           </div>
           
           <div className="meta-item">
             <span className="meta-label">Listed By</span>
-            <span className="listed-by">{merchantName}</span>
+            <span className="listed-by text-indigo-600">{merchantName}</span>
           </div>
           
-          <div className="contact-pill">
+          <div className="contact-pill shadow-sm">
             <Phone className="w-3.5 h-3.5" />
             <span>{merchantPhone}</span>
           </div>
@@ -62,13 +74,14 @@ const ProductCard = ({ product, categories, onEdit, onDelete, onStatusToggle, on
       <div className="flex items-center gap-4">
         <div className="category-select-wrapper">
           <Select 
-            value={product.category} 
-            onValueChange={(value) => onCategoryUpdate(product.id, value)}
+            value={product.category || 'uncategorized'} 
+            onValueChange={(value) => onCategoryUpdate(product.id, value === 'uncategorized' ? null : value)}
           >
-            <SelectTrigger className="w-full bg-white border-slate-200">
-              <SelectValue placeholder="Select Category" />
+            <SelectTrigger className={`w-full bg-white ${!product.category ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'}`}>
+              <SelectValue placeholder="Assign Category" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="uncategorized" className="text-slate-400">-- Uncategorized --</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.slug} value={cat.slug}>
                   {cat.name}
