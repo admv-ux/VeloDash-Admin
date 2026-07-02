@@ -8,6 +8,13 @@ RUN npm install
 
 # Copy rest of the React code and build
 COPY . .
+
+# Build-time config baked into the static bundle (Vite reads VITE_* from env).
+# VITE_API_KEY must equal the backend's API_KEY, else every /admin/* call 403s.
+ARG VITE_API_KEY
+ARG VITE_API_BASE_URL=https://api.velocouriersvc.com/api/v1
+ENV VITE_API_KEY=$VITE_API_KEY
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 # Stage 2: Serve with Nginx
