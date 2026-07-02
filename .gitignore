@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 .env
+# build-time secret (injected by scripts/deploy-with-key.sh)
+.env.production
