@@ -1,10 +1,15 @@
 import axios from 'axios';
 
-//export const API_BASE_URL = 'http://localhost:3008/api/v1';
-//const API_BASE_URL = 'http://localhost:3008/api/v1';
-export const API_BASE_URL = 'https://api.velocouriersvc.com/api/v1';
+// Base URL and API key are overridable at build time via Vite env vars
+// (VITE_API_BASE_URL / VITE_API_KEY). The defaults target production and use the
+// same public x-api-key gate the mobile app and marketing site ship with, so the
+// dashboard works out of the box after a build.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.velocouriersvc.com/api/v1';
 
-const API_KEY = 'your-api-key-here';
+// The x-api-key gate value. Injected at build time via VITE_API_KEY so the real
+// key is never committed to source. The deploy build must set VITE_API_KEY to the
+// backend's API_KEY value.
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -348,11 +353,11 @@ export const base44 = {
         return response.data;
       },
       async creditWallet(userId, data) {
-        const response = await client.post(`/admin/credit-wallet/${userId}`, data);
+        const response = await client.post(`/admin/users/${userId}/credit-wallet`, data);
         return response.data;
       },
       async debitWallet(userId, data) {
-        const response = await client.post(`/admin/debit-wallet/${userId}`, data);
+        const response = await client.post(`/admin/users/${userId}/debit-wallet`, data);
         return response.data;
       },
       async approvePayout(id) {
@@ -370,7 +375,7 @@ export const base44 = {
         return response.data;
       },
       async getReport(params = {}) {
-        const response = await client.get('/admin/revenue-report', { params });
+        const response = await client.get('/admin/reports/revenue', { params });
         return response.data;
       },
       async getFinancialOverview(params = {}) {
