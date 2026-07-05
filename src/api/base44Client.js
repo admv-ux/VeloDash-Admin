@@ -63,6 +63,10 @@ export const base44 = {
       const response = await client.post('/auth/verify-otp', { phoneNumber, code });
       return response.data;
     },
+    async loginWithPassword(email, password) {
+      const response = await client.post('/auth/login', { email, password });
+      return response.data; // { user: { id, phoneNumber, email, roles, ... } }
+    },
     async me() {
       const response = await client.get('/auth/me');
       return response.data;
