@@ -41,11 +41,13 @@ import {
   Search,
   Globe,
   Database,
+  KeyRound,
 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
 import { useAuth } from '@/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 
@@ -79,6 +81,7 @@ const navigation = [
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
   const { user, logout, currentLocation, setLocationScope } = useAuth();
 
   const { data: countries = [] } = useQuery({
@@ -297,6 +300,10 @@ export default function Layout({ children, currentPageName }) {
                       <p className="text-xs text-slate-500">{user.email}</p>
                     </div>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setPwOpen(true)}>
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      Change password
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign out
@@ -304,6 +311,7 @@ export default function Layout({ children, currentPageName }) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              <ChangePasswordDialog open={pwOpen} onOpenChange={setPwOpen} />
             </div>
           </div>
         </header>

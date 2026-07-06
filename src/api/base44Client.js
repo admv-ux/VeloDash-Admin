@@ -67,6 +67,10 @@ export const base44 = {
       const response = await client.post('/auth/login', { email, password });
       return response.data; // { user: { id, phoneNumber, email, roles, ... } }
     },
+    async changePassword(currentPassword, newPassword) {
+      const response = await client.post('/auth/password', { currentPassword, newPassword });
+      return response.data;
+    },
     async me() {
       const response = await client.get('/auth/me');
       return response.data;
