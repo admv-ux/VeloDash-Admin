@@ -107,13 +107,14 @@ const VehiclePricingSection = ({ country, currency }) => {
       pricePerKm: Number(item.pricePerKm),
       pricePerMin: Number(item.pricePerMin),
       minimumFare: Number(item.minimumFare),
+      bookingFee: Number(item.bookingFee ?? 0),
       maxPassengers: Number(item.maxPassengers),
       isActive: item.isActive,
     });
   };
 
-  const vehicleIcons = { bike: Bike, car: Car, suv: Truck, truck: Truck };
-  const vehicleLabels = { bike: 'Motorcycle', car: 'Standard Car', suv: 'SUV / Large', truck: 'Truck' };
+  const vehicleIcons = { bike: Bike, car: Car, priority: Car, suv: Truck, truck: Truck };
+  const vehicleLabels = { bike: 'Motorcycle', car: 'Standard Car', priority: 'Priority', suv: 'SUV / Large', truck: 'Truck' };
 
   if (isLoading) return <div className="flex items-center gap-2 py-4 text-slate-400"><Loader2 className="w-4 h-4 animate-spin" /> Loading pricing...</div>;
 
@@ -153,6 +154,7 @@ const VehiclePricingSection = ({ country, currency }) => {
                   <FieldInput label={`Per Km (${currency})`} value={editForm.pricePerKm} onChange={(v) => setEditForm({ ...editForm, pricePerKm: v })} />
                   <FieldInput label={`Per Min (${currency})`} value={editForm.pricePerMin} onChange={(v) => setEditForm({ ...editForm, pricePerMin: v })} />
                   <FieldInput label={`Min Fare (${currency})`} value={editForm.minimumFare} onChange={(v) => setEditForm({ ...editForm, minimumFare: v })} />
+                  <FieldInput label={`Booking Fee (${currency})`} value={editForm.bookingFee} onChange={(v) => setEditForm({ ...editForm, bookingFee: v })} />
                   <FieldInput label="Max Passengers" value={editForm.maxPassengers} onChange={(v) => setEditForm({ ...editForm, maxPassengers: v })} />
                   <div className="flex items-center gap-2 pt-5">
                     <Switch checked={editForm.isActive} onCheckedChange={(v) => setEditForm({ ...editForm, isActive: v })} />
@@ -160,11 +162,12 @@ const VehiclePricingSection = ({ country, currency }) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div><p className="text-[10px] text-slate-400 uppercase">Base</p><p className="font-semibold text-sm">{currency} {Number(item.basePrice).toFixed(2)}</p></div>
                   <div><p className="text-[10px] text-slate-400 uppercase">Per Km</p><p className="font-semibold text-sm">{currency} {Number(item.pricePerKm).toFixed(2)}</p></div>
                   <div><p className="text-[10px] text-slate-400 uppercase">Per Min</p><p className="font-semibold text-sm">{currency} {Number(item.pricePerMin).toFixed(2)}</p></div>
                   <div><p className="text-[10px] text-slate-400 uppercase">Min Fare</p><p className="font-semibold text-sm">{currency} {Number(item.minimumFare).toFixed(2)}</p></div>
+                  <div><p className="text-[10px] text-slate-400 uppercase">Booking Fee</p><p className="font-semibold text-sm">{currency} {Number(item.bookingFee ?? 0).toFixed(2)}</p></div>
                   <div><p className="text-[10px] text-slate-400 uppercase">Max Riders</p><p className="font-semibold text-sm">{item.maxPassengers}</p></div>
                 </div>
               )}
