@@ -108,6 +108,8 @@ const VehiclePricingSection = ({ country, currency }) => {
       pricePerMin: Number(item.pricePerMin),
       minimumFare: Number(item.minimumFare),
       bookingFee: Number(item.bookingFee ?? 0),
+      bookingFeePercent: Number(item.bookingFeePercent ?? 0),
+      roadLevy: Number(item.roadLevy ?? 0),
       maxPassengers: Number(item.maxPassengers),
       isActive: item.isActive,
     });
@@ -155,6 +157,8 @@ const VehiclePricingSection = ({ country, currency }) => {
                   <FieldInput label={`Per Min (${currency})`} value={editForm.pricePerMin} onChange={(v) => setEditForm({ ...editForm, pricePerMin: v })} />
                   <FieldInput label={`Min Fare (${currency})`} value={editForm.minimumFare} onChange={(v) => setEditForm({ ...editForm, minimumFare: v })} />
                   <FieldInput label={`Booking Fee (${currency})`} value={editForm.bookingFee} onChange={(v) => setEditForm({ ...editForm, bookingFee: v })} />
+                  <FieldInput label="Booking Fee %" value={editForm.bookingFeePercent} onChange={(v) => setEditForm({ ...editForm, bookingFeePercent: v })} />
+                  <FieldInput label={`Road Levy (${currency})`} value={editForm.roadLevy} onChange={(v) => setEditForm({ ...editForm, roadLevy: v })} />
                   <FieldInput label="Max Passengers" value={editForm.maxPassengers} onChange={(v) => setEditForm({ ...editForm, maxPassengers: v })} />
                   <div className="flex items-center gap-2 pt-5">
                     <Switch checked={editForm.isActive} onCheckedChange={(v) => setEditForm({ ...editForm, isActive: v })} />
@@ -168,6 +172,8 @@ const VehiclePricingSection = ({ country, currency }) => {
                   <div><p className="text-[10px] text-slate-400 uppercase">Per Min</p><p className="font-semibold text-sm">{currency} {Number(item.pricePerMin).toFixed(2)}</p></div>
                   <div><p className="text-[10px] text-slate-400 uppercase">Min Fare</p><p className="font-semibold text-sm">{currency} {Number(item.minimumFare).toFixed(2)}</p></div>
                   <div><p className="text-[10px] text-slate-400 uppercase">Booking Fee</p><p className="font-semibold text-sm">{currency} {Number(item.bookingFee ?? 0).toFixed(2)}</p></div>
+                  <div><p className="text-[10px] text-slate-400 uppercase">Booking Fee %</p><p className="font-semibold text-sm">{Number(item.bookingFeePercent ?? 0).toFixed(1)}%</p></div>
+                  <div><p className="text-[10px] text-slate-400 uppercase">Road Levy</p><p className="font-semibold text-sm">{currency} {Number(item.roadLevy ?? 0).toFixed(2)}</p></div>
                   <div><p className="text-[10px] text-slate-400 uppercase">Max Riders</p><p className="font-semibold text-sm">{item.maxPassengers}</p></div>
                 </div>
               )}
@@ -491,7 +497,7 @@ export default function FeeStructure() {
                 label={`Service Fee (${currency})`}
                 value={form.riderServiceFee}
                 onChange={(v) => updateField('riderServiceFee', v)}
-                hint="Added on top of fare — 100% goes to platform"
+                hint="Added on top of fare - 100% goes to platform"
               />
               <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
                 <div className="flex gap-2 items-start text-emerald-700">
@@ -591,7 +597,7 @@ export default function FeeStructure() {
 
         {/* ── Vehicle Pricing Tab ──────────────────── */}
         <TabsContent value="vehicle-pricing" className="space-y-4 mt-4">
-          <SectionCard title={`Vehicle Pricing — ${getCountryName(selectedCountry)}`} icon={Car} description="Ride fare structure per vehicle type.">
+          <SectionCard title={`Vehicle Pricing - ${getCountryName(selectedCountry)}`} icon={Car} description="Ride fare structure per vehicle type.">
             <VehiclePricingSection country={selectedCountry} currency={currency} />
           </SectionCard>
         </TabsContent>

@@ -35,6 +35,7 @@ export default function Zones() {
     delivery_enabled: true,
     rides_enabled: true,
     radius_km: 10,
+    flatSurcharge: 0,
   });
 
   const queryClient = useQueryClient();
@@ -89,6 +90,7 @@ export default function Zones() {
       delivery_enabled: true,
       rides_enabled: true,
       radius_km: 10,
+      flatSurcharge: 0,
     });
   };
 
@@ -106,6 +108,7 @@ export default function Zones() {
       delivery_enabled: zone.delivery_enabled !== false,
       rides_enabled: zone.rides_enabled !== false,
       radius_km: zone.radius_km || 10,
+      flatSurcharge: Number(zone.flatSurcharge ?? 0),
     });
     setShowForm(true);
   };
@@ -256,6 +259,16 @@ export default function Zones() {
                   min="1"
                   value={formData.radius_km}
                   onChange={(e) => setFormData({ ...formData, radius_km: parseFloat(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Flat Surcharge (added when pickup/dropoff is inside this zone)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.flatSurcharge}
+                  onChange={(e) => setFormData({ ...formData, flatSurcharge: parseFloat(e.target.value) || 0 })}
                 />
               </div>
               <div className="space-y-2">

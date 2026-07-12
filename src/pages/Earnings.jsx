@@ -521,7 +521,7 @@ export default function Earnings() {
               <BreakdownRow label="  ↳ Surge Revenue" amount={r.surgeRevenue} color="text-amber-600" />
               <div className="border-t border-dashed border-slate-200 my-2" />
               <BreakdownRow label="Platform Commission" amount={r.commission} color="text-emerald-600" sub="% of fare (excl. service fee)" />
-              <BreakdownRow label="Rider Service Fee" amount={r.riderServiceFees} color="text-emerald-600" sub="Flat fee — 100% platform" />
+              <BreakdownRow label="Rider Service Fee" amount={r.riderServiceFees} color="text-emerald-600" sub="Flat fee - 100% platform" />
               <BreakdownRow label="Driver Payout" amount={r.driverPayouts} color="text-rose-600" sub="Fare minus commission" />
               <div className="border-t border-slate-200 my-2" />
               <BreakdownRow label="Platform Take (Rides)" amount={r.platformTake} color="text-emerald-700" bold sub="Commission + Service Fee" />
