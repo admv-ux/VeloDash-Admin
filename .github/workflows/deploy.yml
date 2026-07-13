@@ -1,8 +1,11 @@
 name: Deploy Velo Admin
 
-# Builds and deploys the admin dashboard to the VPS on every push to main,
-# mirroring the backend pipeline: SSH in, rebuild the image (with the real API
-# key baked in), recreate the container, and health-check it.
+# Builds and deploys the admin dashboard to the VPS on every push to main.
+# The source is checked out in Actions and COPIED to the server (the VPS has
+# no GitHub credentials - deploy keys are disabled for this repo, which is why
+# the old git-pull-on-VPS flow failed with "Repository not found"). Then: SSH
+# in, rebuild the image (with the real API key baked in), recreate the
+# container, and health-check it.
 
 on:
   push:
@@ -13,6 +16,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy source to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST || '38.242.149.20' }}
+          username: ${{ secrets.SERVER_USER || 'devkojo' }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: "."
+          target: "~/apps/velo-admin/src"
+          rm: true
+
       - name: Deploy to VPS
         id: deploy
         uses: appleboy/ssh-action@v1
@@ -33,10 +50,7 @@ jobs:
             echo "ADMIN DEPLOYMENT STARTED  $(date '+%Y-%m-%d %H:%M:%S %Z')"
             echo "=========================================="
 
-            cd ~/apps/velo-admin/velo-admin
-
-            echo "-- PULLING LATEST CODE --"
-            git pull origin main
+            cd ~/apps/velo-admin/src
 
             echo "-- RESOLVING API KEY --"
             KEY="$VITE_API_KEY"
