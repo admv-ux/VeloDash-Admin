@@ -116,7 +116,7 @@ const VehiclePricingSection = ({ country, currency }) => {
   };
 
   const vehicleIcons = { bike: Bike, car: Car, priority: Car, suv: Truck, truck: Truck };
-  const vehicleLabels = { bike: 'Motorcycle', car: 'Standard Car', priority: 'Priority', suv: 'SUV / Large', truck: 'Truck' };
+  const vehicleLabels = { bike: 'Motorcycle', car: 'Standard Car', priority: 'Velo Priority', suv: 'SUV / Large', truck: 'Truck' };
 
   if (isLoading) return <div className="flex items-center gap-2 py-4 text-slate-400"><Loader2 className="w-4 h-4 animate-spin" /> Loading pricing...</div>;
 

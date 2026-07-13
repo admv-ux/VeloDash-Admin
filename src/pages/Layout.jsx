@@ -70,6 +70,7 @@ const navigation = [
     ]
   },
   { name: 'Campaigns', href: 'Campaigns', icon: Megaphone },
+  { name: 'Support Tickets', href: 'SupportTickets', icon: TicketCheck },
   { name: 'Notifications', href: 'Notifications', icon: Bell },
   { name: 'Audit Logs', href: 'AuditLogs', icon: Shield },
   { name: 'Settings', href: 'Settings', icon: Settings },
