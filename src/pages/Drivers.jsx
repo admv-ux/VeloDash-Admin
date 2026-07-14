@@ -125,6 +125,18 @@ export default function Drivers() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
+  // Flagged drivers (6h off-boarding window)
+  const { data: flaggedDrivers = [] } = useQuery({
+    queryKey: ['flagged-drivers'],
+    queryFn: () => base44.entities.Driver.listFlagged(),
+    refetchInterval: 60000,
+  });
+  const clearFlagMutation = useMutation({
+    mutationFn: (userId) => base44.entities.Driver.clearFlag(userId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['flagged-drivers'] }); toast.success('Flag cleared'); },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
   const openVerifyDialog = (driver, action) => {
     setSelectedDriver(driver);
     setVerifyAction(action);
@@ -266,6 +278,32 @@ export default function Drivers() {
 
   return (
     <div className="space-y-6">
+      {/* Flagged drivers (6h off-boarding window) */}
+      {flaggedDrivers.length > 0 && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600" />
+            <p className="text-sm font-semibold text-rose-800">
+              {flaggedDrivers.length} flagged driver{flaggedDrivers.length > 1 ? 's' : ''} - auto-suspended if not cleared within 6 hours
+            </p>
+          </div>
+          <div className="space-y-2">
+            {flaggedDrivers.map((d) => (
+              <div key={d.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-rose-100">
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{d.user?.email || d.user?.phoneNumber || d.userId}</p>
+                  <p className="text-xs text-slate-500">{d.flagReason} - flagged {new Date(d.flaggedAt).toLocaleString()}</p>
+                </div>
+                <Button size="sm" variant="outline" className="border-rose-300 text-rose-700 hover:bg-rose-100"
+                  onClick={() => clearFlagMutation.mutate(d.userId)}>
+                  Clear flag
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Pending alert */}
       {pendingCount > 0 && (
         <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">

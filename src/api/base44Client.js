@@ -101,6 +101,18 @@ export const base44 = {
         });
         return response.data;
       },
+      async listFlagged() {
+        const response = await client.get('/admin/drivers/flagged');
+        return response.data.drivers;
+      },
+      async flag(userId, reason) {
+        const response = await client.post(`/admin/drivers/${userId}/flag`, { reason });
+        return response.data;
+      },
+      async clearFlag(userId) {
+        const response = await client.post(`/admin/drivers/${userId}/clear-flag`);
+        return response.data;
+      },
       async delete(id) {
         const response = await client.delete(`/admin/drivers/${id}`);
         return response.status === 204;
