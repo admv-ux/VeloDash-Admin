@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { MoreHorizontal, Eye, CheckCircle, Clock, XCircle, MessageSquare, DollarSign } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, MessageSquare, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -36,10 +36,21 @@ export default function SupportTickets() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [dialogMode, setDialogMode] = useState('respond'); // 'respond' | 'resolve'
   const [resolution, setResolution] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  const [replyText, setReplyText] = useState('');
 
   const queryClient = useQueryClient();
+
+  const openTicket = (row, mode) => {
+    setSelectedTicket(row);
+    setDialogMode(mode);
+    setResolution(row.resolution || '');
+    setRefundAmount(row.refund_amount?.toString() || '');
+    setReplyText('');
+    setShowDetails(true);
+  };
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ['tickets'],
@@ -55,9 +66,23 @@ export default function SupportTickets() {
     },
   });
 
-  const handleStatusChange = (ticket, newStatus) => {
-    updateMutation.mutate({ id: ticket.id, data: { status: newStatus } });
-  };
+  const { data: threadMessages = [], isLoading: threadLoading } = useQuery({
+    queryKey: ['ticket-messages', selectedTicket?.id],
+    queryFn: () => base44.entities.SupportTicket.getMessages(selectedTicket.id),
+    enabled: !!selectedTicket && showDetails,
+    refetchInterval: showDetails ? 10000 : false,
+  });
+
+  const respondMutation = useMutation({
+    mutationFn: ({ id, message }) => base44.entities.SupportTicket.respond(id, message),
+    onSuccess: () => {
+      setReplyText('');
+      queryClient.invalidateQueries({ queryKey: ['ticket-messages', selectedTicket?.id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      toast.success('Response sent to the user');
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || 'Could not send response'),
+  });
 
   const handleResolve = () => {
     const data = {
@@ -74,7 +99,8 @@ export default function SupportTickets() {
     const matchesSearch = 
       t.ticket_number?.toLowerCase().includes(searchValue.toLowerCase()) ||
       t.subject?.toLowerCase().includes(searchValue.toLowerCase()) ||
-      t.user_name?.toLowerCase().includes(searchValue.toLowerCase());
+      t.user?.email?.toLowerCase().includes(searchValue.toLowerCase()) ||
+      t.user?.phoneNumber?.includes(searchValue);
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -93,8 +119,8 @@ export default function SupportTickets() {
       header: 'User',
       cell: (row) => (
         <div>
-          <p className="text-sm font-medium text-slate-900">{row.user_name || '-'}</p>
-          <p className="text-sm text-slate-500 capitalize">{row.user_type}</p>
+          <p className="text-sm font-medium text-slate-900">{row.user?.email || row.user?.phoneNumber || '-'}</p>
+          <p className="text-sm text-slate-500">{row.user?.phoneNumber && row.user?.email ? row.user.phoneNumber : ''}</p>
         </div>
       ),
     },
@@ -140,22 +166,12 @@ export default function SupportTickets() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => { 
-              setSelectedTicket(row); 
-              setResolution(row.resolution || '');
-              setRefundAmount(row.refund_amount?.toString() || '');
-              setShowDetails(true); 
-            }}>
-              <Eye className="w-4 h-4 mr-2" /> View & Resolve
+            <DropdownMenuItem onClick={() => openTicket(row, 'respond')}>
+              <MessageSquare className="w-4 h-4 mr-2" /> View and Respond
             </DropdownMenuItem>
-            {row.status === 'open' && (
-              <DropdownMenuItem onClick={() => handleStatusChange(row, 'in_progress')}>
-                <Clock className="w-4 h-4 mr-2 text-blue-600" /> Mark In Progress
-              </DropdownMenuItem>
-            )}
-            {row.status !== 'closed' && (
-              <DropdownMenuItem onClick={() => handleStatusChange(row, 'closed')}>
-                <XCircle className="w-4 h-4 mr-2 text-slate-600" /> Close
+            {row.status !== 'closed' && row.status !== 'resolved' && (
+              <DropdownMenuItem onClick={() => openTicket(row, 'resolve')}>
+                <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" /> Resolve and Close
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -238,12 +254,8 @@ export default function SupportTickets() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-500">User</p>
-                  <p className="font-medium">{selectedTicket.user_name}</p>
-                  <p className="text-sm text-slate-500">{selectedTicket.user_email}</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-500">User Type</p>
-                  <p className="font-medium capitalize">{selectedTicket.user_type}</p>
+                  <p className="font-medium">{selectedTicket.user?.email || '-'}</p>
+                  <p className="text-sm text-slate-500">{selectedTicket.user?.phoneNumber || ''}</p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-500">Category</p>
@@ -262,45 +274,93 @@ export default function SupportTickets() {
                 <p className="text-slate-700">{selectedTicket.description}</p>
               </div>
 
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Resolution</h4>
-                <div className="space-y-2">
-                  <Label>Resolution Notes</Label>
-                  <Textarea
-                    value={resolution}
-                    onChange={(e) => setResolution(e.target.value)}
-                    placeholder="Enter resolution details..."
-                    rows={3}
-                  />
+              {/* Conversation thread: support and the user reply until closed */}
+              <div className="space-y-3 border-t pt-4">
+                <h4 className="font-medium flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" /> Conversation
+                </h4>
+                <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                  {threadLoading && <p className="text-sm text-slate-400">Loading messages...</p>}
+                  {!threadLoading && threadMessages.length === 0 && (
+                    <p className="text-sm text-slate-400">No messages yet. Send the first response below.</p>
+                  )}
+                  {threadMessages.map((m) => (
+                    <div key={m.id} className={`flex ${m.senderRole === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${m.senderRole === 'admin' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}`}>
+                        <p>{m.message}</p>
+                        <p className={`text-[10px] mt-1 ${m.senderRole === 'admin' ? 'text-indigo-200' : 'text-slate-400'}`}>
+                          {m.senderRole === 'admin' ? 'Support' : 'User'} - {format(new Date(m.createdAt), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label>Refund Amount (optional)</Label>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-slate-400" />
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={refundAmount}
-                      onChange={(e) => setRefundAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-40"
+                {dialogMode === 'respond' && selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Write a response to the user..."
+                      rows={2}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => respondMutation.mutate({ id: selectedTicket.id, message: replyText.trim() })}
+                      disabled={!replyText.trim() || respondMutation.isPending}
+                      className="self-end"
+                    >
+                      Send
+                    </Button>
+                  </div>
+                )}
+                {(selectedTicket.status === 'closed' || selectedTicket.status === 'resolved') && (
+                  <p className="text-sm text-slate-400">This ticket is {selectedTicket.status}. Replies are disabled.</p>
+                )}
+              </div>
+
+              {dialogMode === 'resolve' && (
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="font-medium">Resolve and Close</h4>
+                  <div className="space-y-2">
+                    <Label>Resolution Notes</Label>
+                    <Textarea
+                      value={resolution}
+                      onChange={(e) => setResolution(e.target.value)}
+                      placeholder="Enter resolution details..."
+                      rows={3}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Refund Amount (optional)</Label>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-slate-400" />
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={refundAmount}
+                        onChange={(e) => setRefundAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-40"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-4">
                 <Button variant="outline" onClick={() => setShowDetails(false)}>
-                  Cancel
+                  Close window
                 </Button>
-                <Button 
-                  onClick={handleResolve}
-                  disabled={!resolution}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" /> Resolve Ticket
-                </Button>
+                {dialogMode === 'resolve' && (
+                  <Button 
+                    onClick={handleResolve}
+                    disabled={!resolution}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" /> Resolve and Close
+                  </Button>
+                )}
               </div>
             </div>
           )}

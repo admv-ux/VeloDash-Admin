@@ -66,6 +66,7 @@ const navigation = [
       { name: 'Platform Revenue', path: '/earnings', roles: ['admin', 'finance_viewer', 'country_manager'] },
       { name: 'User Wallets', path: '/finances/wallets', roles: ['admin', 'finance_viewer'] },
       { name: 'Transaction Logs', path: '/finances/transactions', roles: ['admin', 'finance_viewer'] },
+      { name: 'Gateway Payments', path: '/finances/gateway-payments', roles: ['admin', 'finance_viewer'] },
       { name: 'Fee & Fare Structure', path: '/fee-structure', roles: ['admin', 'finance_viewer', 'country_manager'] },
     ]
   },

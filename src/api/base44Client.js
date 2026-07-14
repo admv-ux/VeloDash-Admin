@@ -360,6 +360,18 @@ export const base44 = {
         const response = await client.get('/admin/transactions', { params });
         return response.data;
       },
+      async listGatewayPayments(params = {}) {
+        const response = await client.get('/admin/payments', { params });
+        return response.data;
+      },
+      async reverifyPayment(id) {
+        const response = await client.post(`/admin/payments/${id}/reverify`);
+        return response.data;
+      },
+      async refundPaymentToWallet(id) {
+        const response = await client.post(`/admin/payments/${id}/refund-to-wallet`);
+        return response.data;
+      },
       async creditWallet(userId, data) {
         const response = await client.post(`/admin/users/${userId}/credit-wallet`, data);
         return response.data;
@@ -486,6 +498,14 @@ export const base44 = {
       },
       async update(id, data) {
         const response = await client.patch(`/admin/support-tickets/${id}`, data);
+        return response.data;
+      },
+      async getMessages(id) {
+        const response = await client.get(`/admin/support-tickets/${id}/messages`);
+        return response.data.messages;
+      },
+      async respond(id, message) {
+        const response = await client.post(`/admin/support-tickets/${id}/messages`, { message });
         return response.data;
       },
     },
