@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { MoreHorizontal, CheckCircle, MessageSquare, DollarSign } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, XCircle, MessageSquare, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -64,6 +64,17 @@ export default function SupportTickets() {
       toast.success('Ticket updated');
       setShowDetails(false);
     },
+  });
+
+  // Close = final. The customer can no longer reply after this.
+  const closeMutation = useMutation({
+    mutationFn: (id) => base44.entities.SupportTicket.update(id, { status: 'closed' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      toast.success('Ticket closed');
+      setShowDetails(false);
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || 'Could not close ticket'),
   });
 
   const { data: threadMessages = [], isLoading: threadLoading } = useQuery({
@@ -171,7 +182,12 @@ export default function SupportTickets() {
             </DropdownMenuItem>
             {row.status !== 'closed' && row.status !== 'resolved' && (
               <DropdownMenuItem onClick={() => openTicket(row, 'resolve')}>
-                <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" /> Resolve and Close
+                <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" /> Mark Resolved
+              </DropdownMenuItem>
+            )}
+            {row.status !== 'closed' && (
+              <DropdownMenuItem onClick={() => closeMutation.mutate(row.id)}>
+                <XCircle className="w-4 h-4 mr-2 text-slate-600" /> Close Ticket
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -295,7 +311,7 @@ export default function SupportTickets() {
                     </div>
                   ))}
                 </div>
-                {dialogMode === 'respond' && selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (
+                {dialogMode === 'respond' && selectedTicket.status !== 'closed' && (
                   <div className="flex gap-2">
                     <Textarea
                       value={replyText}
@@ -313,14 +329,15 @@ export default function SupportTickets() {
                     </Button>
                   </div>
                 )}
-                {(selectedTicket.status === 'closed' || selectedTicket.status === 'resolved') && (
-                  <p className="text-sm text-slate-400">This ticket is {selectedTicket.status}. Replies are disabled.</p>
+                {selectedTicket.status === 'closed' && (
+                  <p className="text-sm text-slate-400">This ticket is closed. Replies are disabled.</p>
                 )}
               </div>
 
               {dialogMode === 'resolve' && (
                 <div className="space-y-4 border-t pt-4">
-                  <h4 className="font-medium">Resolve and Close</h4>
+                  <h4 className="font-medium">Mark Resolved</h4>
+                  <p className="text-xs text-slate-500">The customer can still reply, which reopens the ticket. Use "Close Ticket" for final closure.</p>
                   <div className="space-y-2">
                     <Label>Resolution Notes</Label>
                     <Textarea
@@ -358,7 +375,7 @@ export default function SupportTickets() {
                     disabled={!resolution}
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
-                    <CheckCircle className="w-4 h-4 mr-2" /> Resolve and Close
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark Resolved
                   </Button>
                 )}
               </div>
