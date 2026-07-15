@@ -159,6 +159,8 @@ export default function Services() {
                     <tr>
                       <th className="px-6 py-4">Business Name</th>
                       <th className="px-6 py-4">Category</th>
+                      <th className="px-6 py-4">Call Types</th>
+                      <th className="px-6 py-4">Travel</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4">Joined Date</th>
                       <th className="px-6 py-4 text-right">Actions</th>
@@ -179,6 +181,17 @@ export default function Services() {
                           </div>
                         </td>
                         <td className="px-6 py-4 capitalize">{provider.category}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-1">
+                            {provider.inCallEnabled !== false && <Badge className="px-2 py-0.5 bg-indigo-100 text-indigo-700">In-Call</Badge>}
+                            {provider.outCallEnabled === true && <Badge className="px-2 py-0.5 bg-teal-100 text-teal-700">Out-Call</Badge>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 text-xs">
+                          {provider.outCallEnabled === true
+                            ? `${Number(provider.travelDistanceKm ?? 20)} km / base ${Number(provider.travelFeeBase ?? 0).toFixed(2)} + ${Number(provider.travelFeePerKm ?? 0).toFixed(2)}/km`
+                            : '-'}
+                        </td>
                         <td className="px-6 py-4">
                           <Badge className={cn(
                             "px-2 py-0.5",
@@ -241,10 +254,14 @@ export default function Services() {
                           <Badge className={cn(
                             "px-2 py-0.5",
                             booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                            booking.status === 'requested' ? 'bg-blue-100 text-blue-700' :
+                            booking.status === 'requested' ? 'bg-green-100 text-green-800' :
+                            ['accepted', 'scheduled'].includes(booking.status) ? 'bg-blue-100 text-blue-800' :
+                            booking.status === 'in_progress' ? 'bg-violet-100 text-violet-700' :
+                            booking.status === 'expired' ? 'bg-slate-200 text-slate-600' :
+                            ['cancelled', 'customer_cancelled', 'provider_cancelled', 'declined'].includes(booking.status) ? 'bg-rose-100 text-rose-700' :
                             'bg-slate-100 text-slate-700'
                           )}>
-                            {booking.status}
+                            {String(booking.status).replace(/_/g, ' ')}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-right font-bold text-slate-900">
