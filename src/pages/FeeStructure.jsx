@@ -617,6 +617,12 @@ export default function FeeStructure() {
                 type="text"
                 hint="ISO 4217 (e.g. GHS, NGN, USD)"
               />
+              <FieldInput
+                label={`USD Exchange Rate (${currency} per 1 USD)`}
+                value={form.usdExchangeRate}
+                onChange={(v) => updateField('usdExchangeRate', v)}
+                hint="Used to convert charges to USD when the payment gateway cannot charge this currency"
+              />
             </div>
           </SectionCard>
 
