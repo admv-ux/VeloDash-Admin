@@ -562,7 +562,14 @@ export default function FeeStructure() {
                 label={`Booking Fee (${currency})`}
                 value={form.serviceBookingFee}
                 onChange={(v) => updateField('serviceBookingFee', v)}
-                hint="0 = free to book"
+                hint="Fixed fee per booked date (0 = none)"
+              />
+              <FieldInput
+                label="Booking Fee Rate"
+                value={form.serviceBookingFeeRate}
+                onChange={(v) => updateField('serviceBookingFeeRate', v)}
+                suffix="%"
+                hint="% of service price, adds to the fixed fee"
               />
               <FieldInput
                 label={`Late Cancel Fee (${currency})`}
