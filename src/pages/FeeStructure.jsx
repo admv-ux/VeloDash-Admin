@@ -630,6 +630,19 @@ export default function FeeStructure() {
                 onChange={(v) => updateField('usdExchangeRate', v)}
                 hint="Used to convert charges to USD when the payment gateway cannot charge this currency"
               />
+              <FieldInput
+                label="Processing Fee Rate"
+                value={form.paymentProcessingFeeRate}
+                onChange={(v) => updateField('paymentProcessingFeeRate', v)}
+                suffix="%"
+                hint="Card/momo fee shown to and paid by the customer (0 = platform absorbs it)"
+              />
+              <FieldInput
+                label={`Processing Fee Fixed (${currency})`}
+                value={form.paymentProcessingFeeFixed}
+                onChange={(v) => updateField('paymentProcessingFeeFixed', v)}
+                hint="Flat amount added to the processing fee per card/momo payment"
+              />
             </div>
           </SectionCard>
 
