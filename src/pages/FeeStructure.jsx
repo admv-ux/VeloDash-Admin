@@ -556,6 +556,23 @@ export default function FeeStructure() {
             </div>
           </SectionCard>
 
+          <SectionCard title="Out-Call Travel Rates" icon={Truck} description="Platform-set travel fees for providers who travel to the customer (charged to the customer, converted to the local currency).">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FieldInput
+                label="Travel Fee per KM (USD)"
+                value={form.serviceTravelPerKmUsd}
+                onChange={(v) => updateField('serviceTravelPerKmUsd', v)}
+                hint="USD per km of provider travel"
+              />
+              <FieldInput
+                label="Travel Fee per Minute (USD)"
+                value={form.serviceTravelPerMinUsd}
+                onChange={(v) => updateField('serviceTravelPerMinUsd', v)}
+                hint="USD per estimated minute of provider travel"
+              />
+            </div>
+          </SectionCard>
+
           <SectionCard title="Booking & Cancellation Fees" icon={Clock} description="Fees for service bookings and late cancellations.">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <FieldInput
