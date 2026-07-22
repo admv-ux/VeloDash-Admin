@@ -534,6 +534,37 @@ export default function FeeStructure() {
               </div>
             </div>
           </SectionCard>
+
+          <SectionCard title="Cash Settlement & Tax" icon={Zap} description="Withholding tax and cash debt limits for drivers on cash jobs.">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FieldInput
+                label="Withholding Tax (WHT)"
+                value={form.whtRate}
+                onChange={(v) => updateField('whtRate', v)}
+                suffix="%"
+                hint="Withheld from the driver's gross share on cash jobs (0 = off)"
+              />
+              <FieldInput
+                label="Cash Debt Cap"
+                value={form.cashDebtCap}
+                onChange={(v) => updateField('cashDebtCap', v)}
+                suffix={currency}
+                hint="Driver is blocked from new cash jobs past this debt (0 = no limit)"
+              />
+              <FieldInput
+                label="VAT on Commission"
+                value={form.vatOnCommissionRate}
+                onChange={(v) => updateField('vatOnCommissionRate', v)}
+                suffix="%"
+                hint="Recorded for remittance (Nigeria: 7.5)"
+              />
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              On a cash job the driver holds the customer's money, so their wallet is debited
+              the commission plus WHT and may go negative. WHT is tagged as tax escrow for
+              remittance reporting.
+            </div>
+          </SectionCard>
         </TabsContent>
 
         {/* ── Services Tab ─────────────────────────── */}
