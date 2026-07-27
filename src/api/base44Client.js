@@ -392,6 +392,10 @@ export const base44 = {
         const response = await client.post(`/admin/users/${userId}/debit-wallet`, data);
         return response.data;
       },
+      async listPayouts(params = {}) {
+        const response = await client.get('/admin/payouts', { params });
+        return response.data;
+      },
       async approvePayout(id) {
         const response = await client.patch(`/admin/payouts/${id}/approve`);
         return response.data;

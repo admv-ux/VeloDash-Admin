@@ -64,6 +64,7 @@ const navigation = [
     icon: DollarSign,
     children: [
       { name: 'Platform Revenue', path: '/earnings', roles: ['admin', 'finance_viewer', 'country_manager'] },
+      { name: 'Payouts', path: '/payouts', roles: ['admin', 'finance_viewer'] },
       { name: 'User Wallets', path: '/finances/wallets', roles: ['admin', 'finance_viewer'] },
       { name: 'Transaction Logs', path: '/finances/transactions', roles: ['admin', 'finance_viewer'] },
       { name: 'Gateway Payments', path: '/finances/gateway-payments', roles: ['admin', 'finance_viewer'] },

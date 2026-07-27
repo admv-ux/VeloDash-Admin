@@ -21,6 +21,7 @@ import Wallets from './Wallets';
 import Transactions from './Transactions';
 import GatewayPayments from './GatewayPayments';
 import Earnings from './Earnings';
+import Payouts from './Payouts';
 import Services from './Services';
 import Leaderboard from './Leaderboard';
 import SupabaseExplorer from './SupabaseExplorer';
@@ -40,7 +41,7 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
     // Handle the camelCase matching for navigation highlight
-    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'Users', 'Earnings', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'GatewayPayments', 'Services', 'Leaderboard', 'SupabaseExplorer'];
+    const pages = ['Analytics', 'AuditLogs', 'Dashboard', 'Users', 'Earnings', 'Payouts', 'Products', 'Notifications', 'Campaigns', 'Orders', 'Settings', 'FeeStructure', 'RideSimulator', 'SupportTickets', 'Zones', 'Waitlist', 'Team', 'Wallets', 'Transactions', 'GatewayPayments', 'Services', 'Leaderboard', 'SupabaseExplorer'];
 
     const found = pages.find(p => p.toLowerCase() === urlLastPart.toLowerCase());
     return found || 'Dashboard';
@@ -102,6 +103,7 @@ export default function Pages() {
                 <Route path="/campaigns" element={<Campaigns />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/payouts" element={<Payouts />} />
                 <Route path="/wallets" element={<Wallets />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/gatewaypayments" element={<GatewayPayments />} />
