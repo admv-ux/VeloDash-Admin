@@ -352,6 +352,10 @@ export const base44 = {
         const response = await client.put(`/admin/users/${id}/roles`, { roles });
         return response.data;
       },
+      async update(id, data) {
+        const response = await client.patch(`/admin/users/${id}`, data);
+        return response.data;
+      },
     },
     Drivers: {
       async list() {

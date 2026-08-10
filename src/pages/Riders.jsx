@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { MoreHorizontal, Eye, CheckCircle, Ban, Trash2, Package, Car, Wallet, MessageSquare } from 'lucide-react';
+import { MoreHorizontal, Eye, CheckCircle, Ban, Trash2, Package, Car, Wallet, MessageSquare, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/AuthContext';
@@ -42,6 +42,9 @@ export default function Riders() {
   const [notifBody, setNotifBody] = useState('');
   const [isSendingNotif, setIsSendingNotif] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editPhone, setEditPhone] = useState('');
+  const [editCountry, setEditCountry] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -65,6 +68,32 @@ export default function Riders() {
       toast.success('Rider deleted');
     },
   });
+
+  const editUserMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Users.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['riders'] });
+      toast.success('User details updated');
+      setShowEditDialog(false);
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || err?.message || 'Failed to update user'),
+  });
+
+  const openEdit = (rider) => {
+    setSelectedRider(rider);
+    setEditPhone(rider.phone || '');
+    setEditCountry('');
+    setShowEditDialog(true);
+  };
+
+  const saveEdit = () => {
+    if (!selectedRider) return;
+    const data = {};
+    if (editPhone.trim()) data.phoneNumber = editPhone.trim();
+    if (editCountry.trim()) data.country = editCountry.trim().toUpperCase();
+    if (!data.phoneNumber && !data.country) { toast.error('Enter a phone number or country to update'); return; }
+    editUserMutation.mutate({ id: selectedRider.id, data });
+  };
 
   const handleStatusChange = (rider, newStatus) => {
     updateMutation.mutate({ id: rider.id, data: { status: newStatus } });
@@ -186,6 +215,9 @@ export default function Riders() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => { setSelectedRider(row); setShowDetails(true); }}>
               <Eye className="w-4 h-4 mr-2" /> View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openEdit(row)}>
+              <Pencil className="w-4 h-4 mr-2 text-slate-600" /> Edit Details
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { setSelectedRider(row); setShowNotificationDialog(true); }}>
               <MessageSquare className="w-4 h-4 mr-2 text-blue-600" /> Send Message
@@ -353,8 +385,38 @@ export default function Riders() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit User Details Dialog (phone + country) */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Details</DialogTitle>
+            <DialogDescription>
+              {selectedRider?.full_name} {selectedRider?.country ? `(Current country: ${selectedRider.country})` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="editPhone">Phone number</Label>
+              <Input id="editPhone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+233 55 000 0000" />
+              <p className="text-xs text-slate-500">Saved in international format. Must be unique across users.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editCountry">Country (2-letter code)</Label>
+              <Input id="editCountry" value={editCountry} onChange={(e) => setEditCountry(e.target.value.toUpperCase())} maxLength={2} placeholder="e.g. GH, US, NG" />
+              <p className="text-xs text-slate-500">Leave blank to keep the current country.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button onClick={saveEdit} disabled={editUserMutation.isPending}>
+              {editUserMutation.isPending ? 'Saving...' : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Role Assignment Dialog */}
-      <RoleAssignmentDialog 
+      <RoleAssignmentDialog
         user={selectedRider}
         open={showRoleDialog}
         onOpenChange={setShowRoleDialog}
