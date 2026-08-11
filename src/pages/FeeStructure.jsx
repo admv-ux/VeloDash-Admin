@@ -697,10 +697,16 @@ export default function FeeStructure() {
           <SectionCard title="Referral Program" icon={Users} description="Referral bonus configuration.">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FieldInput
-                label={`Referral Reward (${currency})`}
+                label={`Referrer Reward (${currency})`}
                 value={form.referralRewardAmount}
                 onChange={(v) => updateField('referralRewardAmount', v)}
-                hint="Amount credited to referrer's wallet"
+                hint="Credited to the referrer when their invite's first booking/order is confirmed"
+              />
+              <FieldInput
+                label={`Referee Signup Bonus (${currency})`}
+                value={form.referralRefereeReward}
+                onChange={(v) => updateField('referralRefereeReward', v)}
+                hint="Credited to a new user who signs up with a referral code"
               />
               <FieldInput
                 label="Leaderboard Limit"
