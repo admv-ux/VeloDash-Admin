@@ -227,6 +227,22 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Live now - online counts, matching the app/webapp */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Drivers Online"
+          value={dashboard?.overview?.driversOnline || 0}
+          icon={Car}
+          color="emerald"
+        />
+        <StatCard
+          title="Merchants Online"
+          value={dashboard?.overview?.activeMerchants || 0}
+          icon={Store}
+          color="violet"
+        />
+      </div>
+
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard

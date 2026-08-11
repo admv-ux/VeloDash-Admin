@@ -76,7 +76,16 @@ export default function Riders() {
       toast.success('User details updated');
       setShowEditDialog(false);
     },
-    onError: (err) => toast.error(err?.response?.data?.message || err?.message || 'Failed to update user'),
+    onError: (err) => {
+      // A 404 means this row is stale (the user no longer exists): refresh the list so it clears.
+      if (err?.response?.status === 404) {
+        queryClient.invalidateQueries({ queryKey: ['riders'] });
+        setShowEditDialog(false);
+        toast.error('This user no longer exists. The list has been refreshed.');
+        return;
+      }
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to update user');
+    },
   });
 
   const openEdit = (rider) => {
@@ -89,9 +98,10 @@ export default function Riders() {
   const saveEdit = () => {
     if (!selectedRider) return;
     const data = {};
-    if (editPhone.trim()) data.phoneNumber = editPhone.trim();
+    // Only send fields the admin actually changed - re-sending the unchanged phone is pointless.
+    if (editPhone.trim() && editPhone.trim() !== (selectedRider.phone || '').trim()) data.phoneNumber = editPhone.trim();
     if (editCountry.trim()) data.country = editCountry.trim().toUpperCase();
-    if (!data.phoneNumber && !data.country) { toast.error('Enter a phone number or country to update'); return; }
+    if (!data.phoneNumber && !data.country) { toast.error('Change the phone number or enter a country code to update'); return; }
     editUserMutation.mutate({ id: selectedRider.id, data });
   };
 
