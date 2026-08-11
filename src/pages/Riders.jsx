@@ -98,10 +98,11 @@ export default function Riders() {
   const saveEdit = () => {
     if (!selectedRider) return;
     const data = {};
-    // Only send fields the admin actually changed - re-sending the unchanged phone is pointless.
-    if (editPhone.trim() && editPhone.trim() !== (selectedRider.phone || '').trim()) data.phoneNumber = editPhone.trim();
+    // Send the new phone as `newPhoneNumber` (a `phoneNumber` body field would be read by the auth
+    // middleware as the caller's identity and break admin auth). Only send changed fields.
+    if (editPhone.trim() && editPhone.trim() !== (selectedRider.phone || '').trim()) data.newPhoneNumber = editPhone.trim();
     if (editCountry.trim()) data.country = editCountry.trim().toUpperCase();
-    if (!data.phoneNumber && !data.country) { toast.error('Change the phone number or enter a country code to update'); return; }
+    if (!data.newPhoneNumber && !data.country) { toast.error('Change the phone number or enter a country code to update'); return; }
     editUserMutation.mutate({ id: selectedRider.id, data });
   };
 
