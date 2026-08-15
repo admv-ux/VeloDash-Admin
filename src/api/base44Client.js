@@ -599,6 +599,17 @@ export const base44 = {
       },
     },
   },
+  // Live analytics map data.
+  map: {
+    async live() {
+      const response = await client.get('/admin/map/live');
+      return response.data;
+    },
+    async merchants() {
+      const response = await client.get('/admin/map/merchants');
+      return response.data;
+    },
+  },
   Setup: {
     async createAdmin(data) {
       const response = await client.post('/setup/create-admin', data);

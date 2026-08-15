@@ -25,6 +25,7 @@ import Payouts from './Payouts';
 import Services from './Services';
 import Leaderboard from './Leaderboard';
 import SupabaseExplorer from './SupabaseExplorer';
+import LiveMap from './LiveMap';
 
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/AuthContext';
@@ -115,6 +116,7 @@ export default function Pages() {
                 <Route path="/ridesimulator" element={<RideSimulator />} />
                 <Route path="/supporttickets" element={<SupportTickets />} />
                 <Route path="/zones" element={<Zones />} />
+                <Route path="/live-map" element={<LiveMap />} />
                 <Route path="/waitlist" element={<Waitlist />} />
                 <Route path="/team" element={<Team />} />
                 <Route path="/services" element={<Services />} />
