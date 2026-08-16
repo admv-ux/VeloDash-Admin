@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44, getErrorMessage } from '@/api/base44Client';
 import { loadGoogleMaps } from '@/lib/googleMaps';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -46,6 +47,7 @@ export default function LiveMap() {
   const map = useRef(null);
   const info = useRef(null);
   const layersRef = useRef({ drivers: [], merchants: [], orders: [], coverage: [], heatmap: null });
+  const cluster = useRef(null);
   const [ready, setReady] = useState(false);
   const [err, setErr] = useState('');
   const [selected, setSelected] = useState(null);
@@ -85,8 +87,8 @@ export default function LiveMap() {
   }, []);
 
   // Helper: a colored circle marker at an exact coordinate.
-  const dot = (position, color, scale, title) => new gmaps.current.Marker({
-    position, map: map.current, title,
+  const dot = (position, color, scale, title, noMap) => new gmaps.current.Marker({
+    position, map: noMap ? null : map.current, title,
     icon: { path: gmaps.current.SymbolPath.CIRCLE, scale, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5 },
   });
   const bindClick = (marker, html, sel) => marker.addListener('click', () => {
@@ -106,16 +108,21 @@ export default function LiveMap() {
     });
   }, [ready, drivers, show.drivers]);
 
-  // Redraw merchants layer.
+  // Redraw merchants layer (clustered - dense areas collapse into counts that split apart on zoom).
   useEffect(() => {
     if (!ready) return;
-    const L = layersRef.current.merchants; clear(L);
-    if (show.merchants) stores.forEach((s) => {
-      if (s.lat == null || s.lng == null) return;
-      const m = dot({ lat: Number(s.lat), lng: Number(s.lng) }, MERCHANT_COLORS[merchantBucket(s.category)], 6, s.businessName);
-      const html = `<div style="font:13px/1.4 system-ui"><b>${esc(s.businessName)}</b><br>${esc(s.category || 'Store')}${s.city ? ' - ' + esc(s.city) : ''}<br>${esc(s.status || '')}</div>`;
-      bindClick(m, html, { kind: 'merchant', data: s }); L.push(m);
-    });
+    if (!cluster.current) cluster.current = new MarkerClusterer({ map: map.current });
+    cluster.current.clearMarkers();
+    const L = layersRef.current.merchants; L.length = 0;
+    if (show.merchants) {
+      stores.forEach((s) => {
+        if (s.lat == null || s.lng == null) return;
+        const m = dot({ lat: Number(s.lat), lng: Number(s.lng) }, MERCHANT_COLORS[merchantBucket(s.category)], 6, s.businessName, true);
+        const html = `<div style="font:13px/1.4 system-ui"><b>${esc(s.businessName)}</b><br>${esc(s.category || 'Store')}${s.city ? ' - ' + esc(s.city) : ''}<br>${esc(s.status || '')}</div>`;
+        bindClick(m, html, { kind: 'merchant', data: s }); L.push(m);
+      });
+      cluster.current.addMarkers(L);
+    }
   }, [ready, stores, show.merchants]);
 
   // Redraw orders layer (pickup + dropoff + connecting line).
