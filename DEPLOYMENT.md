@@ -13,7 +13,7 @@ Server OS: Ubuntu 24.04
 Server Public IP:
 
 ```
-38.242.149.20
+162.35.106.11
 ```
 
 Frontend Runtime:
@@ -41,7 +41,7 @@ admin.velocouriersvc.com
 SSH into the server:
 
 ```bash
-ssh devkojo@38.242.149.20
+ssh devkojo@162.35.106.11
 ```
 
 Update packages:
@@ -118,7 +118,7 @@ velo-frontend:latest
 App (temporary access):
 
 ```
-http://38.242.149.20:8080
+http://162.35.106.11:8080
 ```
 
 ---
@@ -132,14 +132,14 @@ Configure DNS using your provider (e.g. Cloudflare, Namecheap):
 ```
 Type: A
 Host: admin
-Value: 38.242.149.20
+Value: 162.35.106.11
 TTL: Auto
 ```
 
 Result:
 
 ```
-admin.velocouriersvc.com → 38.242.149.20
+admin.velocouriersvc.com → 162.35.106.11
 ```
 
 ---
@@ -290,7 +290,7 @@ jobs:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
         with:
-          host: 38.242.149.20
+          host: 162.35.106.11
           username: devkojo
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
