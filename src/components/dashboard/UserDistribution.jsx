@@ -4,7 +4,10 @@ import { Store, Car, Users, MapPin } from 'lucide-react';
 
 export default function UserDistribution({ merchants, drivers, riders, onStatClick, stats }) {
   // Calculate totals
-  const totalUsers = (merchants?.length || 0) + (drivers?.length || 0) + (riders?.length || 0);
+  // Real platform user count from the database. Summing the three role lists
+  // double-counts anyone holding more than one role, so prefer the server total.
+  const totalUsers = stats?.totalUsers
+    ?? ((merchants?.length || 0) + (drivers?.length || 0) + (riders?.length || 0));
   
   // Group by city
   const locationStats = {};
@@ -39,38 +42,38 @@ export default function UserDistribution({ merchants, drivers, riders, onStatCli
       <CardContent className="space-y-6">
         {/* Total Overview */}
         <div className="grid grid-cols-3 gap-4">
-          <div 
-            className="text-center p-4 bg-violet-50 rounded-xl cursor-pointer hover:bg-violet-100 transition-colors"
-            onClick={() => onStatClick?.("Total Merchants", stats?.totalMerchantsByCountry)}
-          >
-            <div className="flex items-center justify-center mb-2">
-              <Store className="w-6 h-6 text-violet-600" />
-            </div>
-            <p className="text-2xl font-bold text-violet-600">{stats?.totalMerchants || merchants?.length || 0}</p>
-            <p className="text-sm text-slate-600">Merchants</p>
-          </div>
-          <div 
-            className="text-center p-4 bg-emerald-50 rounded-xl cursor-pointer hover:bg-emerald-100 transition-colors"
-            onClick={() => onStatClick?.("Total Drivers", stats?.totalDriversByCountry)}
-          >
-            <div className="flex items-center justify-center mb-2">
-              <Car className="w-6 h-6 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-bold text-emerald-600">{stats?.totalDrivers || drivers?.length || 0}</p>
-            <p className="text-sm text-slate-600">Drivers</p>
-            <p className="text-[10px] text-emerald-500 font-medium mt-1">
-              {drivers?.filter(d => d.status === 'online').length || 0} Online Now
-            </p>
-          </div>
-          <div 
+          <div
             className="text-center p-4 bg-blue-50 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors"
             onClick={() => onStatClick?.("Total Buyers", stats?.totalRidersByCountry)}
           >
             <div className="flex items-center justify-center mb-2">
               <Users className="w-6 h-6 text-blue-600" />
             </div>
-            <p className="text-2xl font-bold text-blue-600">{stats?.totalRiders || riders?.length || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">{stats?.totalRiders ?? riders?.length ?? 0}</p>
             <p className="text-sm text-slate-600">Buyers</p>
+          </div>
+          <div
+            className="text-center p-4 bg-violet-50 rounded-xl cursor-pointer hover:bg-violet-100 transition-colors"
+            onClick={() => onStatClick?.("Total Merchants", stats?.totalMerchantsByCountry)}
+          >
+            <div className="flex items-center justify-center mb-2">
+              <Store className="w-6 h-6 text-violet-600" />
+            </div>
+            <p className="text-2xl font-bold text-violet-600">{stats?.totalMerchants ?? merchants?.length ?? 0}</p>
+            <p className="text-sm text-slate-600">Merchants</p>
+          </div>
+          <div
+            className="text-center p-4 bg-emerald-50 rounded-xl cursor-pointer hover:bg-emerald-100 transition-colors"
+            onClick={() => onStatClick?.("Total Drivers", stats?.totalDriversByCountry)}
+          >
+            <div className="flex items-center justify-center mb-2">
+              <Car className="w-6 h-6 text-emerald-600" />
+            </div>
+            <p className="text-2xl font-bold text-emerald-600">{stats?.totalDrivers ?? drivers?.length ?? 0}</p>
+            <p className="text-sm text-slate-600">Drivers</p>
+            <p className="text-[10px] text-emerald-500 font-medium mt-1">
+              {stats?.driversOnline ?? drivers?.filter(d => d?.status === 'online').length ?? 0} Online Now
+            </p>
           </div>
         </div>
 

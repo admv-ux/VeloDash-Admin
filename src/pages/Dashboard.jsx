@@ -8,7 +8,7 @@ import { Store, Car, Users, Package, DollarSign, TrendingUp, Calendar, Clock, Sh
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/AuthContext';
 import SurgeOverview from '@/components/dashboard/SurgeOverview';
-import LiveMap from '@/components/dashboard/LiveMap';
+import NetworkMap from '@/components/map/NetworkMap';
 import QuickStats from '@/components/dashboard/QuickStats';
 import RevenueChart from '@/components/dashboard/RevenueChart';
 import UserDistribution from '@/components/dashboard/UserDistribution';
@@ -89,9 +89,13 @@ export default function Dashboard() {
     }
   };
 
-  const { data: dashboard, isLoading: loadingStats } = useQuery({
+  // Realtime: the user counts refresh on their own so the dashboard reflects
+  // the database without the operator having to reload the page.
+  const { data: dashboard, isLoading: loadingStats, dataUpdatedAt } = useQuery({
     queryKey: ['dashboard-stats', currentLocation],
     queryFn: () => base44.entities.Dashboard.getStats(),
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
   });
 
   const handleStatClick = (title, data) => {
@@ -186,143 +190,136 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Platform Users"
-          value={dashboard?.overview?.totalUsers || 0}
-          change="+12%"
-          changeType="positive"
-          icon={Users}
-          color="blue"
-          onClick={() => handleStatClick("Total Platform Users", dashboard?.overview?.totalUsersByCountry)}
+    <div className="space-y-8">
+      {/* 1. Platform users - the headline number, straight from the database */}
+      <section className="space-y-4">
+        <SectionHeading
+          title="Platform Users"
+          subtitle="Live counts from the database"
+          live
+          updatedAt={dataUpdatedAt}
         />
-        <StatCard
-          title="Monthly Active Users"
-          value={dashboard?.overview?.monthlyActiveUsers || 0}
-          change="+8%"
-          changeType="positive"
-          icon={TrendingUp}
-          color="emerald"
-          onClick={() => handleStatClick("Monthly Active Users", dashboard?.overview?.monthlyActiveUsersByCountry)}
-        />
-        <StatCard
-          title="Active Drivers"
-          value={dashboard?.overview?.activeDrivers || 0}
-          change="+5%"
-          changeType="positive"
-          icon={Car}
-          color="violet"
-          onClick={() => handleStatClick("Active Drivers", dashboard?.overview?.activeDriversByCountry)}
-        />
-        <StatCard
-          title="Today's Gross Revenue"
-          value={`₵${((dashboard?.today?.orderRevenue || 0) + (dashboard?.today?.rideRevenue || 0)).toFixed(2)}`}
-          change="+22%"
-          changeType="positive"
-          icon={DollarSign}
-          color="amber"
-          onClick={() => handleStatClick("Today's Gross Revenue", dashboard?.today?.orderRevenueByCountry)}
-        />
-      </div>
 
-      {/* Live now - online counts, matching the app/webapp */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Drivers Online"
-          value={dashboard?.overview?.driversOnline || 0}
-          icon={Car}
-          color="emerald"
-        />
-        <StatCard
-          title="Merchants Online"
-          value={dashboard?.overview?.activeMerchants || 0}
-          icon={Store}
-          color="violet"
-        />
-      </div>
-
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Active Orders/Rides"
-          value={dashboard?.today?.totalOrders || 0}
-          subtitle={dashboard?.today?.lastOrderTime ? `Last order ${formatDistanceToNow(new Date(dashboard.today.lastOrderTime))} ago` : 'No recent orders'}
-          icon={Package}
-          color="indigo"
-          onClick={() => handleStatClick("Active Orders/Rides", dashboard?.today?.totalOrdersByCountry)}
-        />
-        <StatCard
-          title="Platform Listings"
-          value={dashboard?.overview?.totalListings || 0}
-          icon={Store}
-          color="rose"
-          onClick={() => handleStatClick("Platform Listings", dashboard?.overview?.totalListingsByCountry)}
-        />
-        <StatCard
-          title="Avg Delivery Time"
-          value={`${dashboard?.today?.avgCompletionTimeMinutes || 0} mins`}
-          icon={Clock}
-          color="emerald"
-          onClick={() => handleStatClick("Avg Delivery Time", dashboard?.today?.avgCompletionTimeByCountry)}
-        />
-        <StatCard
-          title="Pending Verifications"
-          value={dashboard?.pendingActions?.pendingMerchantApprovals + dashboard?.pendingActions?.pendingDriverApprovals || 0}
-          icon={Shield}
-          color="amber"
-          onClick={() => handleStatClick("Pending Verifications", dashboard?.pendingActions?.pendingVerificationsByCountry)}
-        />
-      </div>
-
-      {/* User Distribution */}
-      <UserDistribution 
-        merchants={merchants} 
-        drivers={drivers} 
-        riders={riders} 
-        onStatClick={handleStatClick}
-        stats={dashboard?.overview}
-      />
-
-      {/* Map and Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-            <LiveMap 
-              drivers={drivers} 
-              merchants={merchants} 
-              orders={orders} 
-              zones={zones} 
-              onAdjustSurge={handleAdjustSurge} 
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 p-6 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Platform Users</p>
+                <p className="text-5xl font-bold mt-2 tabular-nums">
+                  {(dashboard?.overview?.totalUsers ?? 0).toLocaleString()}
+                </p>
+                <button
+                  className="mt-3 text-xs underline opacity-90 hover:opacity-100"
+                  onClick={() => handleStatClick('Total Platform Users', dashboard?.overview?.totalUsersByCountry)}
+                >
+                  View by country
+                </button>
+              </div>
+              <Users className="w-20 h-20 opacity-25" />
+            </div>
           </div>
-          <div>
-            <SurgeOverview 
-              zones={zones} 
-              globalSurge={globalSurge}
-              onAdjust={handleAdjustSurge}
-              onGlobalToggle={handleGlobalSurgeToggle}
-              onGlobalMultiplierChange={handleGlobalSurgeMultiplier}
-            />
-          </div>
-        </div>
-
-      {/* Charts and Quick Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RevenueChart orders={orders} />
-        </div>
-        <div>
-          <QuickStats 
-            merchants={merchants} 
-            drivers={drivers} 
-            riders={riders} 
-            orders={orders} 
-            onStatClick={handleStatClick}
-            stats={dashboard?.overview}
+          <StatCard
+            title="Monthly Active Users"
+            value={dashboard?.overview?.monthlyActiveUsers || 0}
+            icon={TrendingUp}
+            color="emerald"
+            onClick={() => handleStatClick('Monthly Active Users', dashboard?.overview?.monthlyActiveUsersByCountry)}
           />
         </div>
-      </div>
+
+        {/* 2. Distribution: Buyers, then Merchants, then Drivers */}
+        <UserDistribution
+          merchants={merchants}
+          drivers={drivers}
+          riders={riders}
+          onStatClick={handleStatClick}
+          stats={dashboard?.overview}
+        />
+      </section>
+
+      {/* 3. Platform listings and the rest of the operational numbers */}
+      <section className="space-y-4">
+        <SectionHeading title="Platform & Operations" subtitle="Listings, live activity and what needs attention" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Platform Listings"
+            value={dashboard?.overview?.totalListings || 0}
+            icon={Store}
+            color="rose"
+            onClick={() => handleStatClick('Platform Listings', dashboard?.overview?.totalListingsByCountry)}
+          />
+          <StatCard
+            title="Active Orders/Rides"
+            value={dashboard?.today?.totalOrders || 0}
+            subtitle={dashboard?.today?.lastOrderTime ? `Last order ${formatDistanceToNow(new Date(dashboard.today.lastOrderTime))} ago` : 'No recent orders'}
+            icon={Package}
+            color="indigo"
+            onClick={() => handleStatClick('Active Orders/Rides', dashboard?.today?.totalOrdersByCountry)}
+          />
+          <StatCard
+            title="Avg Delivery Time"
+            value={`${dashboard?.today?.avgCompletionTimeMinutes || 0} mins`}
+            icon={Clock}
+            color="emerald"
+            onClick={() => handleStatClick('Avg Delivery Time', dashboard?.today?.avgCompletionTimeByCountry)}
+          />
+          <StatCard
+            title="Pending Verifications"
+            value={(dashboard?.pendingActions?.pendingMerchantApprovals || 0) + (dashboard?.pendingActions?.pendingDriverApprovals || 0)}
+            icon={Shield}
+            color="amber"
+            onClick={() => handleStatClick('Pending Verifications', dashboard?.pendingActions?.pendingVerificationsByCountry)}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard title="Drivers Online" value={dashboard?.overview?.driversOnline || 0} icon={Car} color="emerald" />
+          <StatCard title="Merchants Online" value={dashboard?.overview?.activeMerchants || 0} icon={Store} color="violet" />
+          <StatCard title="Active Drivers" value={dashboard?.overview?.activeDrivers || 0} icon={Car} color="violet"
+            onClick={() => handleStatClick('Active Drivers', dashboard?.overview?.activeDriversByCountry)} />
+          <StatCard
+            title="Today's Gross Revenue"
+            value={`₵${((dashboard?.today?.orderRevenue || 0) + (dashboard?.today?.rideRevenue || 0)).toFixed(2)}`}
+            icon={DollarSign}
+            color="amber"
+            onClick={() => handleStatClick("Today's Gross Revenue", dashboard?.today?.orderRevenueByCountry)}
+          />
+        </div>
+      </section>
+
+      {/* 4. The live network map (same component the Live Map page renders) */}
+      <section className="space-y-4">
+        <Card className="bg-white border-0 shadow-sm p-4 md:p-6">
+          <NetworkMap compact height={560} />
+        </Card>
+      </section>
+
+      {/* 5. Revenue and surge */}
+      <section className="space-y-4">
+        <SectionHeading title="Revenue & Surge" subtitle="Earnings trend and zone pricing" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <RevenueChart orders={orders} />
+          </div>
+          <div>
+            <QuickStats
+              merchants={merchants}
+              drivers={drivers}
+              riders={riders}
+              orders={orders}
+              onStatClick={handleStatClick}
+              stats={dashboard?.overview}
+            />
+          </div>
+        </div>
+        <SurgeOverview
+          zones={zones}
+          globalSurge={globalSurge}
+          onAdjust={handleAdjustSurge}
+          onGlobalToggle={handleGlobalSurgeToggle}
+          onGlobalMultiplierChange={handleGlobalSurgeMultiplier}
+        />
+      </section>
 
       {/* Revenue Breakdown Dialog */}
       <Dialog open={showRevenueDialog} onOpenChange={setShowRevenueDialog}>
@@ -518,3 +515,22 @@ export default function Dashboard() {
     </div>
   );
 }
+
+/** Section header so the dashboard reads as distinct, scannable blocks. */
+function SectionHeading({ title, subtitle, live, updatedAt }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-2">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+      </div>
+      {live && (
+        <span className="flex items-center gap-1.5 text-xs text-emerald-600">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          Live{updatedAt ? ` - updated ${new Date(updatedAt).toLocaleTimeString()}` : ''}
+        </span>
+      )}
+    </div>
+  );
+}
+

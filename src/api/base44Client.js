@@ -609,6 +609,10 @@ export const base44 = {
       const response = await client.get('/admin/map/merchants');
       return response.data;
     },
+    async users() {
+      const response = await client.get('/admin/map/users');
+      return response.data;
+    },
   },
   Setup: {
     async createAdmin(data) {
