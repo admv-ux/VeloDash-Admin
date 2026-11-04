@@ -3,13 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Store, Car, Users, MapPin } from 'lucide-react';
 
 export default function UserDistribution({ merchants, drivers, riders, onStatClick, stats }) {
-  // Calculate totals
-  // Real platform user count from the database. Summing the three role lists
-  // double-counts anyone holding more than one role, so prefer the server total.
-  const totalUsers = stats?.totalUsers
-    ?? ((merchants?.length || 0) + (drivers?.length || 0) + (riders?.length || 0));
-  const segmentMemberships = stats?.segmentMemberships || 0;
-  
   // Group by city
   const locationStats = {};
   
@@ -75,24 +68,6 @@ export default function UserDistribution({ merchants, drivers, riders, onStatCli
             <p className="text-[10px] text-emerald-500 font-medium mt-1">
               {stats?.driversOnline ?? drivers?.filter(d => d?.status === 'online').length ?? 0} online now
             </p>
-          </div>
-        </div>
-
-        {/* Total Users. The three tiles above overlap - nearly every merchant and
-            driver also holds a buyer role - so they deliberately do not add up
-            to this number, and the caption says so rather than leaving it
-            looking like a contradiction. */}
-        <div className="p-4 bg-gradient-to-r from-violet-500 to-indigo-600 rounded-xl text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Total Platform Users</p>
-              <p className="text-3xl font-bold mt-1">{Number(totalUsers || 0).toLocaleString()}</p>
-              <p className="text-[11px] opacity-85 mt-1">
-                Distinct accounts
-                {segmentMemberships ? ` - the three segments above overlap and total ${segmentMemberships.toLocaleString()} memberships` : ''}
-              </p>
-            </div>
-            <Users className="w-12 h-12 opacity-30" />
           </div>
         </div>
 

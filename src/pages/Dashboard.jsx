@@ -191,7 +191,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* 1. Platform users - the headline number, straight from the database */}
+      {/* 1. Platform users. The headline is Buyers + Merchants + Drivers, so it
+             always equals the three tiles below it. The distinct-account count
+             is still returned by the API as overview.totalUsers; it is kept off
+             the dashboard because showing both read as a contradiction. */}
       <section className="space-y-4">
         <SectionHeading
           title="Platform Users"
@@ -206,15 +209,11 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm opacity-90">Total Platform Users</p>
                 <p className="text-5xl font-bold mt-2 tabular-nums">
-                  {(dashboard?.overview?.totalUsers ?? 0).toLocaleString()}
-                </p>
-                <p className="text-xs opacity-80 mt-1">
-                  Distinct accounts. Buyers, merchants and drivers below overlap and
-                  total {(dashboard?.overview?.segmentMemberships ?? 0).toLocaleString()} memberships.
+                  {(dashboard?.overview?.segmentMemberships ?? 0).toLocaleString()}
                 </p>
                 <button
                   className="mt-3 text-xs underline opacity-90 hover:opacity-100"
-                  onClick={() => handleStatClick('Total Platform Users', dashboard?.overview?.totalUsersByCountry)}
+                  onClick={() => handleStatClick('Total Platform Users', dashboard?.overview?.segmentMembershipsByCountry)}
                 >
                   View by country
                 </button>
