@@ -208,6 +208,10 @@ export default function Dashboard() {
                 <p className="text-5xl font-bold mt-2 tabular-nums">
                   {(dashboard?.overview?.totalUsers ?? 0).toLocaleString()}
                 </p>
+                <p className="text-xs opacity-80 mt-1">
+                  Distinct accounts. Buyers, merchants and drivers below overlap and
+                  total {(dashboard?.overview?.segmentMemberships ?? 0).toLocaleString()} memberships.
+                </p>
                 <button
                   className="mt-3 text-xs underline opacity-90 hover:opacity-100"
                   onClick={() => handleStatClick('Total Platform Users', dashboard?.overview?.totalUsersByCountry)}
