@@ -178,6 +178,28 @@ const ReferralList = ({ referrals, isLoading, onUpdateStatus }) => {
       ),
     },
     {
+      header: 'Program',
+      cell: (row) => (
+        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+          row.program === 'partner'
+            ? 'bg-violet-50 text-violet-700'
+            : row.program === 'customer'
+              ? 'bg-blue-50 text-blue-700'
+              : 'bg-slate-100 text-slate-500'
+        }`}>
+          {row.program === 'partner' ? 'Driver / Merchant' : row.program === 'customer' ? 'Customer' : 'Not started'}
+        </span>
+      ),
+    },
+    {
+      header: 'Progress',
+      cell: (row) => (
+        <span className="text-sm text-slate-600 tabular-nums">
+          {Number(row.progress || 0)} / {Number(row.requiredProgress || 1)}
+        </span>
+      ),
+    },
+    {
       header: 'Reward',
       cell: (row) => (
         <span className={`font-bold ${row.status === 'completed' ? 'text-emerald-600' : 'text-slate-400'}`}>

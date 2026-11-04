@@ -709,6 +709,18 @@ export default function FeeStructure() {
                 hint="Credited to a new user who signs up with a referral code"
               />
               <FieldInput
+                label={`Partner Referral Reward (${currency})`}
+                value={form.partnerReferralRewardAmount}
+                onChange={(v) => updateField('partnerReferralRewardAmount', v)}
+                hint="Credited to BOTH sides when a referred driver or merchant hits the job threshold below"
+              />
+              <FieldInput
+                label="Partner Job Threshold"
+                value={form.partnerReferralThreshold}
+                onChange={(v) => updateField('partnerReferralThreshold', v)}
+                hint="Trips or orders a referred driver/merchant must complete before the partner reward pays"
+              />
+              <FieldInput
                 label="Leaderboard Limit"
                 value={form.leaderboardLimit}
                 onChange={(v) => updateField('leaderboardLimit', v)}
