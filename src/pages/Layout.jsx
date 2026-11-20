@@ -37,6 +37,7 @@ import {
   Tags,
   Briefcase,
   Megaphone,
+  ShoppingBag,
   Crown,
   Search,
   Globe,
@@ -73,6 +74,7 @@ const navigation = [
     ]
   },
   { name: 'Campaigns', href: 'Campaigns', icon: Megaphone },
+  { name: 'Shop', href: 'Shop', icon: ShoppingBag },
   { name: 'Support Tickets', href: 'SupportTickets', icon: TicketCheck },
   { name: 'Notifications', href: 'Notifications', icon: Bell },
   { name: 'Audit Logs', href: 'AuditLogs', icon: Shield },

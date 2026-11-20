@@ -81,6 +81,46 @@ export const base44 = {
     },
   },
   entities: {
+    // The public shop at shopvelodash.com: orders, catalogue and the
+    // "Sell with VeloDash" applications.
+    Shop: {
+      async status() {
+        const response = await client.get('/admin/shop/status');
+        return response.data;
+      },
+      async orderSummary() {
+        const response = await client.get('/admin/shop/orders/summary');
+        return response.data;
+      },
+      async orders(params = {}) {
+        const response = await client.get('/admin/shop/orders', { params });
+        return response.data;
+      },
+      async updateOrder(id, data) {
+        const response = await client.patch(`/admin/shop/orders/${id}`, data);
+        return response.data;
+      },
+      async products(params = {}) {
+        const response = await client.get('/admin/shop/products', { params });
+        return response.data;
+      },
+      async updateProduct(id, data) {
+        const response = await client.patch(`/admin/shop/products/${id}`, data);
+        return response.data;
+      },
+      async applications(params = {}) {
+        const response = await client.get('/admin/shop/merchant-applications', { params });
+        return response.data;
+      },
+      async updateApplication(id, data) {
+        const response = await client.patch(`/admin/shop/merchant-applications/${id}`, data);
+        return response.data;
+      },
+      async reprice() {
+        const response = await client.post('/admin/shop/reprice');
+        return response.data;
+      },
+    },
     Driver: {
       async list() {
         const response = await client.get('/admin/drivers');
