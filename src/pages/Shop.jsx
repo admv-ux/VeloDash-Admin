@@ -176,6 +176,20 @@ function Products() {
     onError: (e) => toast.error(getErrorMessage(e)),
   });
 
+  const syncStore = useMutation({
+    mutationFn: () => base44.entities.Shop.syncStore(),
+    onSuccess: (r) => {
+      toast.success(
+        `${r?.synced ?? 0} of ${r?.listed ?? 0} products are sellable` +
+          (r?.skipped ? `, ${r.skipped} skipped` : '') +
+          (r?.delisted ? `, ${r.delisted} delisted` : ''),
+      );
+      qc.invalidateQueries({ queryKey: ['shop-products-admin'] });
+      qc.invalidateQueries({ queryKey: ['shop-status'] });
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
   const columns = [
     {
       header: 'Product',
@@ -200,12 +214,35 @@ function Products() {
       },
     },
     { header: 'Stock', cell: (row) => <StatusBadge status={row.inStock ? 'active' : 'offline'} /> },
+    {
+      header: 'Options',
+      cell: (row) => <span className="text-sm text-slate-600">{row.variants?.length || 0}</span>,
+    },
+    {
+      // The only column that says whether a product can actually be shipped.
+      // A product missing from the Shopify store cannot be fulfilled at all,
+      // which is why it is shown next to the price rather than buried.
+      header: 'Sellable',
+      cell: (row) =>
+        row.isFulfillable ? (
+          <StatusBadge status="active" />
+        ) : (
+          <span className="text-xs font-medium text-amber-600">Not in store</span>
+        ),
+    },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Stat icon={Package} label="In catalogue" value={status?.active ?? 0} />
+        <Stat icon={Package} label="In catalogue" value={status?.products?.total ?? status?.active ?? 0} />
+        <Stat icon={Package} label="Sellable on the shop" value={status?.products?.sellable ?? 0} />
+        {(status?.products?.unsellable ?? 0) > 0 && (
+          <Stat icon={Package} label="Cannot be shipped" value={status.products.unsellable} />
+        )}
+        <Button variant="outline" onClick={() => syncStore.mutate()} disabled={syncStore.isPending}>
+          {syncStore.isPending ? 'Syncing the store (several minutes)' : 'Sync from Shopify store'}
+        </Button>
         <Button variant="outline" onClick={() => reprice.mutate()} disabled={reprice.isPending}>
           {reprice.isPending ? 'Repricing' : 'Reprice everything'}
         </Button>

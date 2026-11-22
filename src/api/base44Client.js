@@ -84,6 +84,15 @@ export const base44 = {
     // The public shop at shopvelodash.com: orders, catalogue and the
     // "Sell with VeloDash" applications.
     Shop: {
+      /**
+       * Re-read the connected Shopify store and re-price everything in it.
+       * Slow by design: Zendrop rate limits a sustained run, so a full pass
+       * over the store takes several minutes and the call is given room.
+       */
+      async syncStore(params = {}) {
+        const response = await client.post('/admin/shop/sync/store', null, { params, timeout: 900000 });
+        return response.data;
+      },
       async status() {
         const response = await client.get('/admin/shop/status');
         return response.data;
