@@ -129,6 +129,35 @@ export const base44 = {
         const response = await client.post('/admin/shop/reprice');
         return response.data;
       },
+
+      // Fulfilment. Zendrop has no create-order call, so a paid order only
+      // reaches the supplier by being written into Shopify first. Each hop is
+      // its own request so a stuck order can be nudged one step at a time.
+      async fulfillmentStatus() {
+        const response = await client.get('/admin/shop/fulfillment/status');
+        return response.data;
+      },
+      async pushOrder(id) {
+        const response = await client.post(`/admin/shop/orders/${id}/push`);
+        return response.data;
+      },
+      async linkOrder(id) {
+        const response = await client.post(`/admin/shop/orders/${id}/link`);
+        return response.data;
+      },
+      /** confirm: false prices it and charges nothing. confirm: true spends money. */
+      async fulfillOrder(id, body = {}) {
+        const response = await client.post(`/admin/shop/orders/${id}/fulfill`, body, { timeout: 120000 });
+        return response.data;
+      },
+      async refreshOrder(id) {
+        const response = await client.post(`/admin/shop/orders/${id}/refresh`);
+        return response.data;
+      },
+      async tracking(number) {
+        const response = await client.get('/admin/shop/fulfillment/tracking', { params: { number } });
+        return response.data;
+      },
     },
     Driver: {
       async list() {

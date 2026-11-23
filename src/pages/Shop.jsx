@@ -9,7 +9,9 @@ import {
 } from '@/components/ui/select';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { Package, ShoppingBag, Store, DollarSign, Clock, Truck } from 'lucide-react';
+import {
+  Package, ShoppingBag, Store, DollarSign, Clock, Truck, AlertTriangle, RefreshCw, Send, Search,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -28,6 +30,82 @@ function Stat({ icon: Icon, label, value, tone = 'text-violet-500' }) {
         <div>
           <p className="text-xs text-slate-500">{label}</p>
           <p className="text-xl font-bold text-slate-900">{value}</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * The supplier chain, in the order it has to happen.
+ *
+ * Zendrop has no create-order call, so a paid order only reaches the supplier
+ * by being written into the connected Shopify store, which Zendrop then reads.
+ * Showing the hops separately is what makes a stuck order diagnosable: the
+ * question is never "did it fail" but "which hop did it fail at".
+ */
+function SupplierChain({ row }) {
+  return (
+    <div className="text-xs leading-5">
+      <p className={row.shopifyOrderName ? 'text-slate-700' : 'text-slate-400'}>
+        Shopify: {row.shopifyOrderName || 'not pushed'}
+      </p>
+      <p className={row.zendropOrderId ? 'text-slate-700' : 'text-slate-400'}>
+        Zendrop: {row.zendropOrderId ? `#${row.zendropOrderId}${row.zendropStatus ? ` (${row.zendropStatus})` : ''}` : 'not picked up'}
+      </p>
+      {(row.tracking || []).length > 0 && (
+        <p className="font-mono text-slate-700">
+          {(row.tracking || []).map((t) => t.number).join(', ')}
+        </p>
+      )}
+      {row.fulfillmentCost != null && (
+        <p className="text-slate-500">cost {money(row.fulfillmentCost)}</p>
+      )}
+      {row.fulfillmentError && (
+        <p className="text-red-600 max-w-[16rem] truncate" title={row.fulfillmentError}>
+          {row.fulfillmentError}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Whether the chain is wired at all, and what fulfilling draws on. */
+function Wiring() {
+  const { data } = useQuery({
+    queryKey: ['shop-fulfilment-status'],
+    queryFn: () => base44.entities.Shop.fulfillmentStatus(),
+    refetchInterval: 60000,
+  });
+  if (!data) return null;
+  const missing = [];
+  if (!data.zendropConfigured) missing.push('Zendrop API token');
+  if (!data.shopifyConfigured) missing.push('Shopify Admin API token');
+  const credit = data.zendropCredit?.balance;
+
+  return (
+    <Card className={`p-4 ${missing.length ? 'border-amber-300 bg-amber-50' : ''}`}>
+      <div className="flex items-start gap-3">
+        {missing.length ? <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" /> : <Truck className="w-5 h-5 text-emerald-500 mt-0.5" />}
+        <div className="text-sm">
+          {missing.length ? (
+            <>
+              <p className="font-semibold text-amber-900">Orders cannot reach the supplier yet</p>
+              <p className="text-amber-800">
+                Missing: {missing.join(' and ')}. Payments are still taken and recorded; nothing ships
+                until this is set.
+              </p>
+            </>
+          ) : (
+            <p className="font-semibold text-slate-900">
+              Supplier chain is wired to {data.shopifyDomain}
+            </p>
+          )}
+          <p className="text-xs text-slate-600 mt-1">
+            {data.paidOrders} paid {data.paidOrders === 1 ? 'order' : 'orders'}
+            {credit != null ? ` · Zendrop credit ${money(credit)}` : ''}
+            {data.zendropCreditError ? ` · credit unreadable: ${data.zendropCreditError}` : ''}
+          </p>
         </div>
       </div>
     </Card>
@@ -62,6 +140,91 @@ function Orders() {
     },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
+
+  const refreshAll = () => {
+    qc.invalidateQueries({ queryKey: ['shop-orders'] });
+    qc.invalidateQueries({ queryKey: ['shop-order-summary'] });
+    qc.invalidateQueries({ queryKey: ['shop-fulfilment-status'] });
+  };
+
+  const push = useMutation({
+    mutationFn: (id) => base44.entities.Shop.pushOrder(id),
+    onSuccess: (r) => { toast.success(`Pushed to Shopify as ${r.order?.shopifyOrderName || 'an order'}`); refreshAll(); },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const link = useMutation({
+    mutationFn: (id) => base44.entities.Shop.linkOrder(id),
+    onSuccess: (r) => {
+      if (r.linked) toast.success(`Zendrop order #${r.order.zendropOrderId}`);
+      else toast.info('Zendrop has not picked the order up yet. Try again shortly.');
+      refreshAll();
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const refresh = useMutation({
+    mutationFn: (id) => base44.entities.Shop.refreshOrder(id),
+    onSuccess: () => { toast.success('Refreshed from Zendrop'); refreshAll(); },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  /**
+   * Fulfilling spends real money, so the cost is fetched and shown before
+   * anything is charged. Zendrop's own API works the same way: a free preview,
+   * then a confirmation valid for five minutes.
+   */
+  const fulfil = useMutation({
+    mutationFn: async (row) => {
+      const preview = await base44.entities.Shop.fulfillOrder(row.id, { confirm: false });
+      const cost = money(preview?.preview?.total);
+      // eslint-disable-next-line no-alert
+      const ok = window.confirm(
+        `Fulfil ${row.orderNumber} through Zendrop?\n\nThis charges your Zendrop account ${cost} now and cannot be undone here.`,
+      );
+      if (!ok) return { cancelled: true };
+      return base44.entities.Shop.fulfillOrder(row.id, { confirm: true });
+    },
+    onSuccess: (r) => {
+      if (r?.cancelled) return;
+      toast.success(`Dispatched. Charged ${money(r?.preview?.total)}`);
+      refreshAll();
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const busy = push.isPending || link.isPending || fulfil.isPending || refresh.isPending;
+
+  /** The one action that moves this order forward, so there is nothing to choose wrongly. */
+  const NextStep = ({ row }) => {
+    if (row.status !== 'paid') return <span className="text-xs text-slate-400">unpaid</span>;
+    if (!row.shopifyOrderId) {
+      return (
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => push.mutate(row.id)}>
+          <Send className="w-3.5 h-3.5 mr-1" />Push to Shopify
+        </Button>
+      );
+    }
+    if (!row.zendropOrderId) {
+      return (
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => link.mutate(row.id)}>
+          <Search className="w-3.5 h-3.5 mr-1" />Find in Zendrop
+        </Button>
+      );
+    }
+    if (!row.fulfilledAt) {
+      return (
+        <Button size="sm" disabled={busy} onClick={() => fulfil.mutate(row)}>
+          <Truck className="w-3.5 h-3.5 mr-1" />Fulfil
+        </Button>
+      );
+    }
+    return (
+      <Button size="sm" variant="ghost" disabled={busy} onClick={() => refresh.mutate(row.id)}>
+        <RefreshCw className="w-3.5 h-3.5 mr-1" />Refresh
+      </Button>
+    );
+  };
 
   const columns = [
     {
@@ -114,6 +277,8 @@ function Orders() {
         );
       },
     },
+    { header: 'Supplier', cell: (row) => <SupplierChain row={row} /> },
+    { header: 'Next step', cell: (row) => <NextStep row={row} /> },
     {
       header: 'Placed',
       cell: (row) => (
@@ -126,6 +291,7 @@ function Orders() {
 
   return (
     <div className="space-y-4">
+      <Wiring />
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Stat icon={ShoppingBag} label="Orders" value={summary?.orders ?? 0} />
         <Stat icon={DollarSign} label="Paid revenue" value={money(summary?.paidRevenue)} tone="text-emerald-500" />
