@@ -22,6 +22,21 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Edit2, FolderPlus, Tag } from 'lucide-react';
 import DataTable from '@/components/shared/DataTable';
 
+/**
+ * Mirrors MERCHANT_LISTABLE_CATEGORIES in the backend's product-service.
+ * A merchant can only create a listing under one of these; everything else
+ * is legacy or admin-only. Keep the two lists in step.
+ */
+const MERCHANT_LISTABLE = new Set([
+  'food', 'catering', 'bakery', 'beverages',
+  'grocery', 'fresh produce', 'dairy', 'frozen',
+  'pharmacy', 'supplements', 'medical supplies', 'beauty & skincare',
+]);
+
+const openToMerchants = (row) =>
+  MERCHANT_LISTABLE.has(String(row.slug || '').toLowerCase().replace(/-/g, ' ')) ||
+  MERCHANT_LISTABLE.has(String(row.name || '').toLowerCase());
+
 export default function ProductCategoryManager({ open, onOpenChange, defaultType = 'product' }) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -122,6 +137,23 @@ export default function ProductCategoryManager({ open, onOpenChange, defaultType
     {
       header: 'Slug',
       cell: (row) => <code className="text-xs text-slate-400">{row.slug}</code>,
+    },
+    {
+      header: 'Merchants',
+      cell: (row) => (
+        openToMerchants(row) ? (
+          <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
+            Can list here
+          </span>
+        ) : (
+          <span
+            className="text-xs font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded"
+            title="Velo accepts food, grocery and pharmacy listings from merchants. Existing products keep this category; only the admin can add new ones."
+          >
+            Admin only
+          </span>
+        )
+      ),
     },
     {
       header: 'Actions',
