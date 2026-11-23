@@ -130,6 +130,19 @@ export const base44 = {
         return response.data;
       },
 
+      // Putting a catalogue product into the Shopify store. Zendrop will only
+      // fulfil what the store carries, so this is what turns a row we cannot
+      // ship into one we can.
+      async pushProduct(id) {
+        const response = await client.post(`/admin/shop/products/${id}/push`, {}, { timeout: 180000 });
+        return response.data;
+      },
+      /** Starts in the background and answers at once; watch status() for progress. */
+      async pushUnsellable(params = {}) {
+        const response = await client.post('/admin/shop/push-unsellable', {}, { params });
+        return response.data;
+      },
+
       // Fulfilment. Zendrop has no create-order call, so a paid order only
       // reaches the supplier by being written into Shopify first. Each hop is
       // its own request so a stuck order can be nudged one step at a time.

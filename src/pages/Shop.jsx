@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44, getErrorMessage } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
@@ -14,6 +14,12 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+
+/**
+ * The one unsellable reason an admin can fix from here. It has to match the
+ * string the sync writes, so it is named once rather than typed twice.
+ */
+const NOT_IN_STORE = 'Not pushed to the Shopify store';
 
 const money = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n) || 0);
@@ -324,20 +330,68 @@ function Orders() {
 function Products() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
+  // "Which ones can I not ship, and why" is the question this table gets
+  // opened to answer, so it is a filter rather than nine pages of paging.
+  const [state, setState] = useState('all');
+  const [reason, setReason] = useState(null);
+  const [pushing, setPushing] = useState(false);
+
   const { data, isLoading } = useQuery({
-    queryKey: ['shop-products-admin', search],
-    queryFn: () => base44.entities.Shop.products({ ...(search ? { search } : {}), limit: 100 }),
+    queryKey: ['shop-products-admin', search, state, reason],
+    queryFn: () =>
+      base44.entities.Shop.products({
+        ...(search ? { search } : {}),
+        ...(state !== 'all' ? { state } : {}),
+        ...(reason ? { reason } : {}),
+        limit: 100,
+      }),
   });
   const { data: status } = useQuery({
     queryKey: ['shop-status'],
     queryFn: () => base44.entities.Shop.status(),
+    // A background push changes these numbers for as long as it runs, and a
+    // count that only moves when you reload reads as a push that did nothing.
+    refetchInterval: pushing ? 15000 : false,
   });
+
+  const pendingPush = status?.products?.pushable ?? 0;
+  useEffect(() => {
+    if (pushing && pendingPush === 0) setPushing(false);
+  }, [pushing, pendingPush]);
+  useEffect(() => {
+    if (pushing) qc.invalidateQueries({ queryKey: ['shop-products-admin'] });
+  }, [pendingPush, pushing, qc]);
 
   const reprice = useMutation({
     mutationFn: () => base44.entities.Shop.reprice(),
     onSuccess: (r) => {
       toast.success(`Repriced ${r?.updated ?? 0} products`);
       qc.invalidateQueries({ queryKey: ['shop-products-admin'] });
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const pushOne = useMutation({
+    mutationFn: (id) => base44.entities.Shop.pushProduct(id),
+    onSuccess: (r) => {
+      if (r?.ok) toast.success(r.message || 'On sale');
+      else toast.error(r?.message || 'Could not push that to the store');
+      qc.invalidateQueries({ queryKey: ['shop-products-admin'] });
+      qc.invalidateQueries({ queryKey: ['shop-status'] });
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const pushAll = useMutation({
+    mutationFn: () => base44.entities.Shop.pushUnsellable(),
+    onSuccess: (r) => {
+      if (r?.started) {
+        setPushing(true);
+        toast.success(r.message);
+      } else {
+        toast.success(r?.message || 'Nothing to push');
+      }
+      qc.invalidateQueries({ queryKey: ['shop-status'] });
     },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
@@ -393,7 +447,23 @@ function Products() {
         row.isFulfillable ? (
           <StatusBadge status="active" />
         ) : (
-          <span className="text-xs font-medium text-amber-600">Not in store</span>
+          <span className="text-xs font-medium text-amber-600">
+            {row.unsellableReason || 'Not yet diagnosed'}
+          </span>
+        ),
+    },
+    {
+      header: '',
+      cell: (row) =>
+        row.isFulfillable || row.unsellableReason !== NOT_IN_STORE ? null : (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pushOne.isPending}
+            onClick={() => pushOne.mutate(row.id)}
+          >
+            {pushOne.isPending && pushOne.variables === row.id ? 'Pushing' : 'Push to store'}
+          </Button>
         ),
     },
   ];
@@ -413,6 +483,79 @@ function Products() {
           {reprice.isPending ? 'Repricing' : 'Reprice everything'}
         </Button>
       </div>
+      {/* Why the unsellable ones are unsellable. Without this the dashboard
+          could only say "155 cannot be shipped", which is a number nobody can
+          do anything with. Each reason is also a filter. */}
+      {(status?.products?.reasons || []).length > 0 && (
+        <Card className="p-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <p className="text-sm font-semibold text-slate-900">Why {status.products.unsellable} cannot be shipped</p>
+            {status.products.reasons.map((r) => (
+              <button
+                key={r.reason}
+                type="button"
+                onClick={() => {
+                  setState('unsellable');
+                  setReason(reason === r.reason ? null : r.reason);
+                }}
+                className={`text-sm underline-offset-2 hover:underline ${
+                  reason === r.reason ? 'font-semibold text-slate-900 underline' : 'text-slate-600'
+                }`}
+              >
+                {r.count} {r.reason.toLowerCase()}
+              </button>
+            ))}
+            {pendingPush > 0 && (
+              <Button
+                size="sm"
+                className="ml-auto"
+                onClick={() => pushAll.mutate()}
+                disabled={pushAll.isPending || pushing}
+              >
+                {pushing ? `Pushing, ${pendingPush} to go` : `Push all ${pendingPush} to the store`}
+              </Button>
+            )}
+          </div>
+          {pendingPush > 0 && (
+            <p className="mt-2 text-xs text-slate-500">
+              Pushing puts the product into the Shopify store, which is the only thing Zendrop will
+              dispatch from. It takes about a minute each and runs in the background, so you can
+              leave this page.
+            </p>
+          )}
+        </Card>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { id: 'all', label: 'All' },
+          { id: 'sellable', label: 'Sellable' },
+          { id: 'unsellable', label: 'Cannot be shipped' },
+          { id: 'hidden', label: 'Hidden' },
+        ].map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => {
+              setState(f.id);
+              setReason(null);
+            }}
+            className={`rounded-full border px-3 py-1 text-xs font-medium ${
+              state === f.id && !reason
+                ? 'border-slate-900 bg-slate-900 text-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+        {reason && (
+          <span className="rounded-full border border-slate-900 bg-slate-900 px-3 py-1 text-xs font-medium text-white">
+            {reason}
+          </span>
+        )}
+      </div>
+
       <DataTable
         columns={columns}
         data={data?.products || []}
