@@ -343,10 +343,10 @@ function PricingPolicy({ onRepriced }) {
     queryKey: ['shop-pricing-policy'],
     queryFn: () => base44.entities.Shop.pricingPolicy(),
   });
-  const policy = data?.policy;
+  const saved = data ? { ...data.policy, ...data.freight } : null;
 
   const [draft, setDraft] = useState(null);
-  const current = draft || policy;
+  const current = draft || saved;
 
   const save = useMutation({
     mutationFn: (next) =>
@@ -354,6 +354,8 @@ function PricingPolicy({ onRepriced }) {
         shopDutyRate: Number(next.dutyRatePct) || 0,
         shopProcessingFeeRate: Number(next.processingRatePct) || 0,
         shopProcessingFeeFixed: Number(next.processingFixedUsd) || 0,
+        shopMaxShippingUsd: Number(next.maxShippingUsd) || 0,
+        shopMaxShippingRatio: Number(next.maxShippingRatio) || 0,
       }),
     onSuccess: () => {
       toast.success('Saved. Reprice the catalogue to apply it.');
@@ -369,7 +371,8 @@ function PricingPolicy({ onRepriced }) {
       toast.success(
         `Repriced ${r?.changed ?? 0} of ${r?.examined ?? 0} products` +
           (r?.raised ? `, ${r.raised} up` : '') +
-          (r?.lowered ? `, ${r.lowered} down` : ''),
+          (r?.lowered ? `, ${r.lowered} down` : '') +
+          (r?.withdrawn ? `, ${r.withdrawn} withdrawn on shipping` : ''),
       );
       onRepriced?.();
     },
@@ -404,6 +407,8 @@ function PricingPolicy({ onRepriced }) {
         {field('dutyRatePct', 'Duties', '% of goods + shipping')}
         {field('processingRatePct', 'Card fee', '% of the sale')}
         {field('processingFixedUsd', 'Card fee, flat', 'USD per order')}
+        {field('maxShippingUsd', 'Shipping cap', 'USD, above this we do not list it')}
+        {field('maxShippingRatio', 'Shipping limit', 'x the product price')}
         <Button
           size="sm"
           disabled={!draft || save.isPending}
@@ -418,6 +423,11 @@ function PricingPolicy({ onRepriced }) {
       <p className="text-xs text-slate-400 mt-3">
         Saving a rate changes nothing on its own: prices are stored per product, so reprice to apply it.
         The card fee defaults to Stripe's 2.9% plus the 1.5% they add for an international card.
+      </p>
+      <p className="text-xs text-slate-400 mt-1">
+        The two shipping limits hold back products whose freight dwarfs the goods, like the gaming chair
+        Zendrop quoted at $1,010.88 to ship on a $36 product. They show in the table as
+        "Shipping costs too much for what it is" and are never offered to a shopper.
       </p>
     </Card>
   );
