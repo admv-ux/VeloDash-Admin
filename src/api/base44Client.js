@@ -125,8 +125,18 @@ export const base44 = {
         const response = await client.patch(`/admin/shop/merchant-applications/${id}`, data);
         return response.data;
       },
+      /** The duty and card-fee rates every shelf price is built on. */
+      async pricingPolicy() {
+        const response = await client.get('/admin/shop/pricing-policy');
+        return response.data;
+      },
+      /**
+       * Recompute every stored price from what is already on the rows. No
+       * upstream calls, so it is quick, and it is the only thing that makes
+       * a changed rate reach the shop.
+       */
       async reprice() {
-        const response = await client.post('/admin/shop/reprice');
+        const response = await client.post('/admin/shop/reprice', null, { timeout: 300000 });
         return response.data;
       },
 

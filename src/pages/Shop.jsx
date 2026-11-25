@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44, getErrorMessage } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -327,6 +328,101 @@ function Orders() {
   );
 }
 
+/**
+ * What goes into a shelf price, and the two parts of it we decide.
+ *
+ * The product table used to show one figure called "Cost", which read as the
+ * supplier's price with shipping still to come. It was never that. This says
+ * out loud what the price is built from, and lets the duty allowance and the
+ * card fee be changed without a deploy. Neither moves a price until the
+ * catalogue is repriced, because prices are stored on the rows.
+ */
+function PricingPolicy({ onRepriced }) {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ['shop-pricing-policy'],
+    queryFn: () => base44.entities.Shop.pricingPolicy(),
+  });
+  const policy = data?.policy;
+
+  const [draft, setDraft] = useState(null);
+  const current = draft || policy;
+
+  const save = useMutation({
+    mutationFn: (next) =>
+      base44.entities.PlatformSettings.update('DEFAULT', {
+        shopDutyRate: Number(next.dutyRatePct) || 0,
+        shopProcessingFeeRate: Number(next.processingRatePct) || 0,
+        shopProcessingFeeFixed: Number(next.processingFixedUsd) || 0,
+      }),
+    onSuccess: () => {
+      toast.success('Saved. Reprice the catalogue to apply it.');
+      setDraft(null);
+      qc.invalidateQueries({ queryKey: ['shop-pricing-policy'] });
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const reprice = useMutation({
+    mutationFn: () => base44.entities.Shop.reprice(),
+    onSuccess: (r) => {
+      toast.success(
+        `Repriced ${r?.changed ?? 0} of ${r?.examined ?? 0} products` +
+          (r?.raised ? `, ${r.raised} up` : '') +
+          (r?.lowered ? `, ${r.lowered} down` : ''),
+      );
+      onRepriced?.();
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const field = (key, label, suffix) => (
+    <label className="text-sm">
+      <span className="block text-xs font-medium text-slate-500 mb-1">{label}</span>
+      <span className="flex items-center gap-1">
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          className="w-24"
+          value={current?.[key] ?? ''}
+          onChange={(e) => setDraft({ ...current, [key]: e.target.value })}
+        />
+        <span className="text-xs text-slate-400">{suffix}</span>
+      </span>
+    </label>
+  );
+
+  return (
+    <Card className="p-4">
+      <p className="text-sm font-semibold text-slate-900">How a shelf price is built</p>
+      <p className="text-xs text-slate-500 mt-1">
+        selling price = (product + shipping + duties + card fee) x multiplier, rounded up to the next .99.
+        Product and shipping come from Zendrop per item. The multiplier is 2.2x under $15, 1.8x to $35, 1.5x above.
+      </p>
+      <div className="flex flex-wrap items-end gap-4 mt-4">
+        {field('dutyRatePct', 'Duties', '% of goods + shipping')}
+        {field('processingRatePct', 'Card fee', '% of the sale')}
+        {field('processingFixedUsd', 'Card fee, flat', 'USD per order')}
+        <Button
+          size="sm"
+          disabled={!draft || save.isPending}
+          onClick={() => save.mutate(current)}
+        >
+          {save.isPending ? 'Saving' : 'Save rates'}
+        </Button>
+        <Button size="sm" variant="outline" disabled={reprice.isPending} onClick={() => reprice.mutate()}>
+          {reprice.isPending ? 'Repricing' : 'Reprice the catalogue'}
+        </Button>
+      </div>
+      <p className="text-xs text-slate-400 mt-3">
+        Saving a rate changes nothing on its own: prices are stored per product, so reprice to apply it.
+        The card fee defaults to Stripe's 2.9% plus the 1.5% they add for an international card.
+      </p>
+    </Card>
+  );
+}
+
 function Products() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
@@ -361,15 +457,6 @@ function Products() {
   useEffect(() => {
     if (pushing) qc.invalidateQueries({ queryKey: ['shop-products-admin'] });
   }, [pendingPush, pushing, qc]);
-
-  const reprice = useMutation({
-    mutationFn: () => base44.entities.Shop.reprice(),
-    onSuccess: (r) => {
-      toast.success(`Repriced ${r?.updated ?? 0} products`);
-      qc.invalidateQueries({ queryKey: ['shop-products-admin'] });
-    },
-    onError: (e) => toast.error(getErrorMessage(e)),
-  });
 
   const pushOne = useMutation({
     mutationFn: (id) => base44.entities.Shop.pushProduct(id),
@@ -423,14 +510,38 @@ function Products() {
         </div>
       ),
     },
-    { header: 'Cost', cell: (row) => <span className="text-sm text-slate-600">{money(row.landedCost)}</span> },
+    {
+      // One figure called "Cost" read as the product price with shipping
+      // still to come, which is how a healthy $11 margin looked like $1.
+      // Every part of what a sale costs is its own line now.
+      header: 'What it costs us',
+      cell: (row) => (
+        <div className="text-xs leading-5 text-slate-600 whitespace-nowrap">
+          <div>Product <span className="tabular-nums">{money(row.wholesalePrice)}</span></div>
+          <div>Shipping <span className="tabular-nums">{money(row.shippingCost)}</span></div>
+          {Number(row.dutyCost) > 0 && (
+            <div>Duties <span className="tabular-nums">{money(row.dutyCost)}</span></div>
+          )}
+          <div>Card fee <span className="tabular-nums">{money(row.processingFee)}</span></div>
+          <div className="border-t border-slate-200 pt-0.5 mt-0.5 font-semibold text-slate-900">
+            <span className="tabular-nums">{money(row.landedCost)}</span>
+          </div>
+        </div>
+      ),
+    },
     { header: 'Multiplier', cell: (row) => <span className="text-sm">{Number(row.multiplier).toFixed(1)}x</span> },
     { header: 'Retail', cell: (row) => <span className="font-semibold">{money(row.retailPrice)}</span> },
     {
-      header: 'Margin',
+      header: 'You keep',
       cell: (row) => {
         const m = Number(row.retailPrice) - Number(row.landedCost);
-        return <span className={m > 0 ? 'text-emerald-600 font-medium' : 'text-rose-600 font-medium'}>{money(m)}</span>;
+        const pct = Number(row.retailPrice) > 0 ? Math.round((m / Number(row.retailPrice)) * 100) : 0;
+        return (
+          <div className="whitespace-nowrap">
+            <span className={m > 0 ? 'text-emerald-600 font-medium' : 'text-rose-600 font-medium'}>{money(m)}</span>
+            <span className="text-xs text-slate-400 ml-1">{pct}%</span>
+          </div>
+        );
       },
     },
     { header: 'Stock', cell: (row) => <StatusBadge status={row.inStock ? 'active' : 'offline'} /> },
@@ -479,10 +590,9 @@ function Products() {
         <Button variant="outline" onClick={() => syncStore.mutate()} disabled={syncStore.isPending}>
           {syncStore.isPending ? 'Syncing the store (several minutes)' : 'Sync from Shopify store'}
         </Button>
-        <Button variant="outline" onClick={() => reprice.mutate()} disabled={reprice.isPending}>
-          {reprice.isPending ? 'Repricing' : 'Reprice everything'}
-        </Button>
       </div>
+
+      <PricingPolicy onRepriced={() => qc.invalidateQueries({ queryKey: ['shop-products-admin'] })} />
       {/* Why the unsellable ones are unsellable. Without this the dashboard
           could only say "155 cannot be shipped", which is a number nobody can
           do anything with. Each reason is also a filter. */}
